@@ -24,8 +24,10 @@
     "https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/{z}/{x}/{y}.png";
   // Keep off by default in Sandcastle to avoid noisy 404s from sparse/partial GSI coverage.
   const ENABLE_GSI_RASTER_OVERLAYS = false;
-  const TILESET_CACHE_BYTES = 256 * 1024 * 1024;
-  const TILESET_CACHE_OVERFLOW_BYTES = 128 * 1024 * 1024;
+  // Higher cache budget avoids repeated "memoryAdjustedScreenSpaceError" warnings
+  // when multiple PLATEAU tilesets are visible at once.
+  const TILESET_CACHE_BYTES = 768 * 1024 * 1024;
+  const TILESET_CACHE_OVERFLOW_BYTES = 512 * 1024 * 1024;
 
   const viewer = new Cesium.Viewer("cesiumContainer", {
     terrain: Cesium.Terrain.fromWorldTerrain(),
@@ -92,10 +94,14 @@
     floodDepth.alpha = 0.42;
   }
 
-  function configureTileset(ts) {
-    ts.maximumScreenSpaceError = 24;
+  function configureTileset(ts, options) {
+    const opts = options || {};
+    ts.maximumScreenSpaceError = opts.maximumScreenSpaceError || 32;
     ts.cacheBytes = TILESET_CACHE_BYTES;
     ts.maximumCacheOverflowBytes = TILESET_CACHE_OVERFLOW_BYTES;
+    ts.skipLevelOfDetail = true;
+    ts.preferLeaves = true;
+    ts.cullWithChildrenBounds = true;
   }
 
   // Load official PLATEAU building models — replaces generic OSM buildings
@@ -107,7 +113,7 @@
   ]) {
     try {
       const ts = await Cesium.Cesium3DTileset.fromUrl(url);
-      configureTileset(ts);
+      configureTileset(ts, { maximumScreenSpaceError: 36 });
       viewer.scene.primitives.add(ts);
       plateauBuildingTilesets.push(ts);
     } catch (e) {
@@ -199,7 +205,7 @@
 
   try {
     plateauFloodL2 = await Cesium.Cesium3DTileset.fromUrl(PLATEAU_FLOOD_L2_URL);
-    configureTileset(plateauFloodL2);
+    configureTileset(plateauFloodL2, { maximumScreenSpaceError: 20 });
     viewer.scene.primitives.add(plateauFloodL2);
     plateauFloodL2.style = makeFloodStyle(0.75);
     activeFloodTileset = plateauFloodL2;
@@ -209,7 +215,7 @@
 
   try {
     plateauFloodL1 = await Cesium.Cesium3DTileset.fromUrl(PLATEAU_FLOOD_L1_URL);
-    configureTileset(plateauFloodL1);
+    configureTileset(plateauFloodL1, { maximumScreenSpaceError: 20 });
     viewer.scene.primitives.add(plateauFloodL1);
     plateauFloodL1.style = makeFloodStyle(0.75);
     plateauFloodL1.show = false;
