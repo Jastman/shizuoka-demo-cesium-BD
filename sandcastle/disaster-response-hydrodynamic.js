@@ -22,6 +22,10 @@
   const GSI_STD_MAP_URL = "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png";
   const GSI_FLOOD_DEPTH_URL =
     "https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/{z}/{x}/{y}.png";
+  // Keep off by default in Sandcastle to avoid noisy 404s from sparse/partial GSI coverage.
+  const ENABLE_GSI_RASTER_OVERLAYS = false;
+  const TILESET_CACHE_BYTES = 256 * 1024 * 1024;
+  const TILESET_CACHE_OVERFLOW_BYTES = 128 * 1024 * 1024;
 
   const viewer = new Cesium.Viewer("cesiumContainer", {
     terrain: Cesium.Terrain.fromWorldTerrain(),
@@ -43,35 +47,52 @@
   const JAPAN_RECT = Cesium.Rectangle.fromDegrees(122.93, 20.4, 154.0, 45.6);
 
   viewer.imageryLayers.removeAll();
-  const stdMap = viewer.imageryLayers.addImageryProvider(
-    new Cesium.UrlTemplateImageryProvider({
-      url: GSI_STD_MAP_URL,
-      credit: "地理院タイル",
-      minimumLevel: 5,
-      maximumLevel: 18,
-      rectangle: JAPAN_RECT,
+  const osmBase = viewer.imageryLayers.addImageryProvider(
+    new Cesium.OpenStreetMapImageryProvider({
+      url: "https://tile.openstreetmap.org/",
+      credit: "© OpenStreetMap contributors",
     })
   );
-  stdMap.alpha = 0.35;
-  viewer.imageryLayers.addImageryProvider(
-    new Cesium.UrlTemplateImageryProvider({
-      url: GSI_SEAMLESS_PHOTO_URL,
-      credit: "国土地理院 シームレス写真",
-      minimumLevel: 5,
-      maximumLevel: 18,
-      rectangle: JAPAN_RECT,
-    })
-  );
-  const floodDepth = viewer.imageryLayers.addImageryProvider(
-    new Cesium.UrlTemplateImageryProvider({
-      url: GSI_FLOOD_DEPTH_URL,
-      credit: "国土地理院 重ねるハザードマップ",
-      minimumLevel: 5,
-      maximumLevel: 14,
-      rectangle: JAPAN_RECT,
-    })
-  );
-  floodDepth.alpha = 0.42;
+  osmBase.alpha = 1.0;
+
+  let floodDepth = null;
+  if (ENABLE_GSI_RASTER_OVERLAYS) {
+    const stdMap = viewer.imageryLayers.addImageryProvider(
+      new Cesium.UrlTemplateImageryProvider({
+        url: GSI_STD_MAP_URL,
+        credit: "地理院タイル",
+        minimumLevel: 5,
+        maximumLevel: 18,
+        rectangle: JAPAN_RECT,
+      })
+    );
+    stdMap.alpha = 0.35;
+    viewer.imageryLayers.addImageryProvider(
+      new Cesium.UrlTemplateImageryProvider({
+        url: GSI_SEAMLESS_PHOTO_URL,
+        credit: "国土地理院 シームレス写真",
+        minimumLevel: 5,
+        maximumLevel: 18,
+        rectangle: JAPAN_RECT,
+      })
+    );
+    floodDepth = viewer.imageryLayers.addImageryProvider(
+      new Cesium.UrlTemplateImageryProvider({
+        url: GSI_FLOOD_DEPTH_URL,
+        credit: "国土地理院 重ねるハザードマップ",
+        minimumLevel: 5,
+        maximumLevel: 14,
+        rectangle: JAPAN_RECT,
+      })
+    );
+    floodDepth.alpha = 0.42;
+  }
+
+  function configureTileset(ts) {
+    ts.maximumScreenSpaceError = 24;
+    ts.cacheBytes = TILESET_CACHE_BYTES;
+    ts.maximumCacheOverflowBytes = TILESET_CACHE_OVERFLOW_BYTES;
+  }
 
   // Load official PLATEAU building models — replaces generic OSM buildings
   const plateauBuildingTilesets = [];
@@ -82,6 +103,7 @@
   ]) {
     try {
       const ts = await Cesium.Cesium3DTileset.fromUrl(url);
+      configureTileset(ts);
       viewer.scene.primitives.add(ts);
       plateauBuildingTilesets.push(ts);
     } catch (e) {
@@ -110,6 +132,8 @@
   viewer.clock.stopTime = stop.clone();
   viewer.clock.currentTime = start.clone();
   viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+  viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER;
+  viewer.clock.canAnimate = true;
   viewer.clock.multiplier = 120;   // 120x = 6-hour scenario plays in ~3 minutes real time
   viewer.clock.shouldAnimate = false; // User presses Start Scenario to begin
 
@@ -171,6 +195,7 @@
 
   try {
     plateauFloodL2 = await Cesium.Cesium3DTileset.fromUrl(PLATEAU_FLOOD_L2_URL);
+    configureTileset(plateauFloodL2);
     viewer.scene.primitives.add(plateauFloodL2);
     plateauFloodL2.style = makeFloodStyle(0.75);
     activeFloodTileset = plateauFloodL2;
@@ -180,6 +205,7 @@
 
   try {
     plateauFloodL1 = await Cesium.Cesium3DTileset.fromUrl(PLATEAU_FLOOD_L1_URL);
+    configureTileset(plateauFloodL1);
     viewer.scene.primitives.add(plateauFloodL1);
     plateauFloodL1.style = makeFloodStyle(0.75);
     plateauFloodL1.show = false;
@@ -427,10 +453,13 @@
   addButton("Start Scenario", function () {
     // Always reset to beginning so the button works even after clock reaches stopTime.
     viewer.clock.currentTime = start.clone();
+    viewer.clock.canAnimate = true;
     viewer.clock.shouldAnimate = true;
     if (viewer.clockViewModel) {
+      viewer.clockViewModel.canAnimate = true;
       viewer.clockViewModel.shouldAnimate = true;
     }
+    viewer.scene.requestRender();
   });
 
   addButton("Pause Scenario", function () {
@@ -438,13 +467,17 @@
     if (viewer.clockViewModel) {
       viewer.clockViewModel.shouldAnimate = false;
     }
+    viewer.scene.requestRender();
   });
 
   addButton("Resume", function () {
+    viewer.clock.canAnimate = true;
     viewer.clock.shouldAnimate = true;
     if (viewer.clockViewModel) {
+      viewer.clockViewModel.canAnimate = true;
       viewer.clockViewModel.shouldAnimate = true;
     }
+    viewer.scene.requestRender();
   });
 
   addButton("Reset Time", function () {
@@ -486,6 +519,7 @@
   });
 
   addButton("Toggle Flood Raster", function () {
+    if (!floodDepth) return;
     floodDepth.show = !floodDepth.show;
   });
 
