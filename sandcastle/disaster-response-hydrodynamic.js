@@ -5,7 +5,18 @@
   const SHIZUOKA_CENTER = { lon: 138.3831, lat: 34.9769, height: 1800.0 };
   const WATER_GAUGE_LON = 138.3852;
   const WATER_GAUGE_LAT = 34.9811;
-  const SHIZUOKA_3D_TILES_URL = ""; // Optional: drop in project-specific tileset URL
+  // PLATEAU 2023 official Shizuoka City 3D Tiles (MLIT — no auth required)
+  const PLATEAU_BLDG_AOI_LOD2 =
+    "https://assets.cms.plateau.reearth.io/assets/16/f01621-f72d-4c64-9c40-67c97cee7c5f/22100_shizuoka-shi_city_2023_citygml_3_op_bldg_3dtiles_22101_aoi-ku_lod2/tileset.json";
+  const PLATEAU_BLDG_SURUGA_LOD1 =
+    "https://assets.cms.plateau.reearth.io/assets/18/aba17e-da3b-441d-9712-a6db88f3e6c5/22100_shizuoka-shi_city_2023_citygml_3_op_bldg_3dtiles_22102_suruga-ku_lod1/tileset.json";
+  const PLATEAU_BLDG_SHIMIZU_LOD1 =
+    "https://assets.cms.plateau.reearth.io/assets/db/4e7d98-7baf-4fae-bf13-3c98fd53cf32/22100_shizuoka-shi_city_2023_citygml_3_op_bldg_3dtiles_22103_shimizu-ku_lod1/tileset.json";
+  // Abe River flood inundation area: L1 = 100-yr flood, L2 = worst-case maximum scenario
+  const PLATEAU_FLOOD_L1_URL =
+    "https://assets.cms.plateau.reearth.io/assets/41/edaf1e-f484-4ed4-9084-dbcede6352d5/22100_shizuoka-shi_city_2023_citygml_3_op_fld_natl_abegawa_abegawa-warasinagawa_3dtiles_l1_no_texture/tileset.json";
+  const PLATEAU_FLOOD_L2_URL =
+    "https://assets.cms.plateau.reearth.io/assets/23/720679-10c9-46e4-9ab6-4a76ada7566c/22100_shizuoka-shi_city_2023_citygml_3_op_fld_natl_abegawa_abegawa-warasinagawa_3dtiles_l2_no_texture/tileset.json";
   const GSI_SEAMLESS_PHOTO_URL =
     "https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg";
   const GSI_STD_MAP_URL = "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png";
@@ -51,12 +62,20 @@
   );
   floodDepth.alpha = 0.42;
 
-  try {
-    const osmBuildings = await Cesium.createOsmBuildingsAsync();
-    viewer.scene.primitives.add(osmBuildings);
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("OSM Buildings failed to load:", error);
+  // Load official PLATEAU building models — replaces generic OSM buildings
+  const plateauBuildingTilesets = [];
+  for (const [label, url] of [
+    ["Aoi LOD2", PLATEAU_BLDG_AOI_LOD2],
+    ["Suruga LOD1", PLATEAU_BLDG_SURUGA_LOD1],
+    ["Shimizu LOD1", PLATEAU_BLDG_SHIMIZU_LOD1],
+  ]) {
+    try {
+      const ts = await Cesium.Cesium3DTileset.fromUrl(url);
+      viewer.scene.primitives.add(ts);
+      plateauBuildingTilesets.push(ts);
+    } catch (e) {
+      console.warn("PLATEAU building tileset failed (" + label + "):", e);
+    }
   }
 
   viewer.camera.setView({
@@ -128,73 +147,50 @@
     return { label: "Low", color: Cesium.Color.LIME, routeColor: Cesium.Color.WHITE };
   }
 
-  // Four concentric depth zones. Outer = shallowest, inner = deepest.
-  // Each zone has its own fixed footprint (manually contracted inward), a depth band,
-  // and a dynamic extruded height that only appears once the water level reaches that band.
-  const floodZones = [
-    {
-      name: "Flood zone: 0-1 m (watch)",
-      color: Cesium.Color.YELLOW,
-      depthThreshold: 0.5,
-      heightScale: 8,
-      coords: [138.362, 34.966, 138.39, 34.967, 138.406, 34.977, 138.401, 34.993,
-               138.384, 35.001, 138.360, 34.991, 138.352, 34.974],
-    },
-    {
-      name: "Flood zone: 1-2 m (warning)",
-      color: Cesium.Color.ORANGE,
-      depthThreshold: 1.2,
-      heightScale: 10,
-      coords: [138.365, 34.968, 138.387, 34.969, 138.401, 34.978, 138.397, 34.991,
-               138.383, 34.998, 138.364, 34.989, 138.357, 34.976],
-    },
-    {
-      name: "Flood zone: 2-3 m (danger)",
-      color: Cesium.Color.ORANGERED,
-      depthThreshold: 2.0,
-      heightScale: 13,
-      coords: [138.368, 34.970, 138.385, 34.970, 138.397, 34.979, 138.394, 34.989,
-               138.381, 34.995, 138.367, 34.988, 138.360, 34.977],
-    },
-    {
-      name: "Flood zone: 3 m+ (severe)",
-      color: Cesium.Color.RED,
-      depthThreshold: 3.0,
-      heightScale: 18,
-      coords: [138.371, 34.972, 138.382, 34.972, 138.391, 34.980, 138.388, 34.987,
-               138.377, 34.991, 138.370, 34.985, 138.364, 34.978],
-    },
-  ];
-
-  const floodEntities = floodZones.map((zone) => {
-    const positions = Cesium.Cartesian3.fromDegreesArray(zone.coords);
-    return viewer.entities.add({
-      name: zone.name,
-      polygon: {
-        hierarchy: positions,
-        material: new Cesium.ColorMaterialProperty(
-          new Cesium.CallbackProperty(function (time) {
-            const level = getHydroLevel(time);
-            const visible = level >= zone.depthThreshold;
-            const alpha = visible
-              ? Cesium.Math.clamp(0.28 + (level - zone.depthThreshold) * 0.14, 0.28, 0.78)
-              : 0.0;
-            return zone.color.withAlpha(alpha);
-          }, false)
-        ),
-        extrudedHeight: new Cesium.CallbackProperty(function (time) {
-          const level = getHydroLevel(time);
-          if (level < zone.depthThreshold) return 0;
-          return (level - zone.depthThreshold + 0.5) * zone.heightScale;
-        }, false),
-        outline: true,
-        outlineColor: zone.color.withAlpha(0.9),
+  // PLATEAU flood inundation depth-rank style
+  // uro:rank_code: 1=0-0.5 m, 2=0.5-3 m, 3=3-5 m, 4=5 m+
+  function makeFloodStyle(baseAlpha) {
+    return new Cesium.Cesium3DTileStyle({
+      color: {
+        conditions: [
+          ["${feature['uro:rank_code']} === 4", "color('#cc0000', " + baseAlpha + ")"],
+          ["${feature['uro:rank_code']} === 3", "color('#ff4500', " + (baseAlpha * 0.9).toFixed(2) + ")"],
+          ["${feature['uro:rank_code']} === 2", "color('#ff8c00', " + (baseAlpha * 0.85).toFixed(2) + ")"],
+          ["${feature['uro:rank_code']} === 1", "color('#ffd700', " + (baseAlpha * 0.75).toFixed(2) + ")"],
+          ["true", "color('#ffffff', 0.0)"],
+        ],
       },
     });
-  });
+  }
 
-  // Use the outermost zone as the focus target
-  const floodEntity = floodEntities[0];
+  let plateauFloodL1 = null;
+  let plateauFloodL2 = null;
+  let activeFloodTileset = null;
+
+  try {
+    plateauFloodL2 = await Cesium.Cesium3DTileset.fromUrl(PLATEAU_FLOOD_L2_URL);
+    viewer.scene.primitives.add(plateauFloodL2);
+    plateauFloodL2.style = makeFloodStyle(0.75);
+    activeFloodTileset = plateauFloodL2;
+  } catch (e) {
+    console.warn("PLATEAU flood L2 failed:", e);
+  }
+
+  try {
+    plateauFloodL1 = await Cesium.Cesium3DTileset.fromUrl(PLATEAU_FLOOD_L1_URL);
+    viewer.scene.primitives.add(plateauFloodL1);
+    plateauFloodL1.style = makeFloodStyle(0.75);
+    plateauFloodL1.show = false;
+  } catch (e) {
+    console.warn("PLATEAU flood L1 failed:", e);
+  }
+
+  // Proxy flood entity used only for camera-fly focus (replaced by PLATEAU tilesets above)
+  const floodEntity = viewer.entities.add({
+    name: "_flood_proxy",
+    position: Cesium.Cartesian3.fromDegrees(138.383, 34.977, 50),
+    point: { show: false },
+  });
 
   const waterGauge = viewer.entities.add({
     name: "Water gauge",
@@ -312,12 +308,8 @@
       description: route.source,
       polyline: {
         positions: Cesium.Cartesian3.fromDegreesArray(route.positions.flat()),
-        width: 5,
-        material: new Cesium.PolylineOutlineMaterialProperty({
-          color: Cesium.Color.WHITE,
-          outlineColor: Cesium.Color.BLACK,
-          outlineWidth: 2,
-        }),
+        width: 9,
+        material: new Cesium.ColorMaterialProperty(Cesium.Color.WHITE.withAlpha(0.95)),
         clampToGround: true,
         zIndex: 10,
       },
@@ -384,16 +376,17 @@
   legend.style.borderRadius = "6px";
   legend.style.zIndex = "1";
   legend.innerHTML =
-    "<b>Legend</b><br/>" +
-    "<span style='color:#ffd700'>▬</span> Watch: 0–1 m inundation<br/>" +
-    "<span style='color:#ff8c00'>▬</span> Warning: 1–2 m inundation<br/>" +
-    "<span style='color:#ff4500'>▬</span> Danger: 2–3 m inundation<br/>" +
-    "<span style='color:#ff0000'>▬</span> Severe: 3 m+ inundation<br/>" +
+    "<b>Legend — PLATEAU 2023 Shizuoka</b><br/>" +
+    "<span style='color:#ffd700'>▬</span> Flood 0–0.5 m depth<br/>" +
+    "<span style='color:#ff8c00'>▬</span> Flood 0.5–3 m depth<br/>" +
+    "<span style='color:#ff4500'>▬</span> Flood 3–5 m depth<br/>" +
+    "<span style='color:#cc0000'>▬</span> Flood 5 m+ depth<br/>" +
     "<span style='color:#ff4d4d'>●</span> High-severity incident<br/>" +
     "<span style='color:#ffd24d'>●</span> Medium-severity incident<br/>" +
     "<span style='color:#66e0ff'>●</span> Low-severity incident<br/>" +
     "<span style='color:#66ff66'>●</span> Shelter location<br/>" +
-    "<span style='color:#ffffff'>━</span> Evacuation route (road-routed, color = danger level)";
+    "<span style='color:#ffffff'>━</span> Evacuation route (color = danger level)<br/>" +
+    "<small style='color:#aaa'>Flood data: MLIT PLATEAU 2023 安倍川水系</small>";
   viewer.container.appendChild(legend);
 
   viewer.scene.preRender.addEventListener(function () {
@@ -403,11 +396,9 @@
     const routeStress = level > 3.2 ? "Closed segments likely" : level > 2.4 ? "Congested" : "Open";
 
     routeEntities.forEach((entity) => {
-      entity.polyline.material = new Cesium.PolylineOutlineMaterialProperty({
-        color: danger.routeColor.withAlpha(0.98),
-        outlineColor: Cesium.Color.BLACK,
-        outlineWidth: 2,
-      });
+      entity.polyline.material = new Cesium.ColorMaterialProperty(
+        danger.routeColor.withAlpha(0.97)
+      );
     });
 
     panel.innerHTML =
@@ -463,7 +454,8 @@
   });
 
   addButton("Focus Flood Zone", function () {
-    viewer.flyTo(floodEntities, { duration: 1.8 });
+    const target = activeFloodTileset || floodEntity;
+    viewer.flyTo(target, { duration: 1.8 });
   });
 
   addButton("Focus Water Gauge", function () {
@@ -476,6 +468,19 @@
       },
       duration: 1.8,
     });
+  });
+
+  addButton("Flood: L1 / L2", function () {
+    if (!plateauFloodL1 || !plateauFloodL2) return;
+    if (plateauFloodL2.show) {
+      plateauFloodL2.show = false;
+      plateauFloodL1.show = true;
+      activeFloodTileset = plateauFloodL1;
+    } else {
+      plateauFloodL1.show = false;
+      plateauFloodL2.show = true;
+      activeFloodTileset = plateauFloodL2;
+    }
   });
 
   addButton("Toggle Flood Raster", function () {
