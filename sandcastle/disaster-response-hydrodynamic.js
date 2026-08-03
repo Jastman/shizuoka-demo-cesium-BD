@@ -22,7 +22,8 @@
     geocoder: false,
   });
 
-  viewer.scene.globe.depthTestAgainstTerrain = true;
+  // Keep false: depth-testing hides our flood-zone polygons (height=0 clips under terrain).
+  viewer.scene.globe.depthTestAgainstTerrain = false;
   viewer.scene.globe.enableLighting = true;
   viewer.scene.globe.showGroundAtmosphere = true;
   viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0e131e");
@@ -87,9 +88,9 @@
   viewer.clock.startTime = start.clone();
   viewer.clock.stopTime = stop.clone();
   viewer.clock.currentTime = start.clone();
-  viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
-  viewer.clock.multiplier = 600;
-  viewer.clock.shouldAnimate = true;
+  viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+  viewer.clock.multiplier = 120;   // 120x = 6-hour scenario plays in ~3 minutes real time
+  viewer.clock.shouldAnimate = false; // User presses Start Scenario to begin
 
   const waterSamples = [
     { tHours: 0, level: 1.5 },
@@ -122,9 +123,9 @@
       return { label: "High", color: Cesium.Color.ORANGE, routeColor: Cesium.Color.ORANGE };
     }
     if (levelMeters >= 2.1) {
-      return { label: "Guarded", color: Cesium.Color.GOLD, routeColor: Cesium.Color.GOLD };
+      return { label: "Guarded", color: Cesium.Color.GOLD, routeColor: Cesium.Color.YELLOW };
     }
-    return { label: "Low", color: Cesium.Color.LIME, routeColor: Cesium.Color.LIME };
+    return { label: "Low", color: Cesium.Color.LIME, routeColor: Cesium.Color.WHITE };
   }
 
   // Four concentric depth zones. Outer = shallowest, inner = deepest.
@@ -222,8 +223,11 @@
       showBackground: true,
       backgroundColor: Cesium.Color.BLACK.withAlpha(0.65),
       fillColor: Cesium.Color.WHITE,
+      font: "13px sans-serif",
       heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
       pixelOffset: new Cesium.Cartesian2(0, -60),
+      scaleByDistance: new Cesium.NearFarScalar(200, 1.4, 8000, 0.5),
+      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 6000),
     },
   });
 
@@ -308,8 +312,12 @@
       description: route.source,
       polyline: {
         positions: Cesium.Cartesian3.fromDegreesArray(route.positions.flat()),
-        width: 9,
-        material: Cesium.Color.CYAN.withAlpha(0.95),
+        width: 5,
+        material: new Cesium.PolylineOutlineMaterialProperty({
+          color: Cesium.Color.WHITE,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 2,
+        }),
         clampToGround: true,
         zIndex: 10,
       },
@@ -385,7 +393,7 @@
     "<span style='color:#ffd24d'>●</span> Medium-severity incident<br/>" +
     "<span style='color:#66e0ff'>●</span> Low-severity incident<br/>" +
     "<span style='color:#66ff66'>●</span> Shelter location<br/>" +
-    "<span style='color:#00ffff'>━</span> Evacuation route (road-routed)";
+    "<span style='color:#ffffff'>━</span> Evacuation route (road-routed, color = danger level)";
   viewer.container.appendChild(legend);
 
   viewer.scene.preRender.addEventListener(function () {
@@ -395,7 +403,11 @@
     const routeStress = level > 3.2 ? "Closed segments likely" : level > 2.4 ? "Congested" : "Open";
 
     routeEntities.forEach((entity) => {
-      entity.polyline.material = danger.routeColor.withAlpha(0.98);
+      entity.polyline.material = new Cesium.PolylineOutlineMaterialProperty({
+        color: danger.routeColor.withAlpha(0.98),
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 2,
+      });
     });
 
     panel.innerHTML =
@@ -420,6 +432,8 @@
   }
 
   addButton("Start Scenario", function () {
+    // Always reset to beginning so the button works even after clock reaches stopTime.
+    viewer.clock.currentTime = start.clone();
     viewer.clock.shouldAnimate = true;
     if (viewer.clockViewModel) {
       viewer.clockViewModel.shouldAnimate = true;
@@ -433,8 +447,19 @@
     }
   });
 
+  addButton("Resume", function () {
+    viewer.clock.shouldAnimate = true;
+    if (viewer.clockViewModel) {
+      viewer.clockViewModel.shouldAnimate = true;
+    }
+  });
+
   addButton("Reset Time", function () {
     viewer.clock.currentTime = start.clone();
+    viewer.clock.shouldAnimate = false;
+    if (viewer.clockViewModel) {
+      viewer.clockViewModel.shouldAnimate = false;
+    }
   });
 
   addButton("Focus Flood Zone", function () {
