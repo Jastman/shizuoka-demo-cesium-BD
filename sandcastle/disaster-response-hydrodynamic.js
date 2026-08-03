@@ -32,7 +32,7 @@
     timeline: true,
     animation: true,
     baseLayerPicker: true,
-    shadows: true,
+    shadows: false,
     sceneModePicker: false,
     geocoder: false,
   });
@@ -42,6 +42,10 @@
   viewer.scene.globe.enableLighting = true;
   viewer.scene.globe.showGroundAtmosphere = true;
   viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0e131e");
+  viewer.shadows = false;
+  if (viewer.scene.shadowMap) {
+    viewer.scene.shadowMap.enabled = false;
+  }
 
   // Japan bounding box — GSI tiles only exist within this region
   const JAPAN_RECT = Cesium.Rectangle.fromDegrees(122.93, 20.4, 154.0, 45.6);
@@ -521,6 +525,14 @@
   addButton("Toggle Flood Raster", function () {
     if (!floodDepth) return;
     floodDepth.show = !floodDepth.show;
+  });
+
+  addButton("Toggle Shadows", function () {
+    const next = !viewer.shadows;
+    viewer.shadows = next;
+    if (viewer.scene.shadowMap) {
+      viewer.scene.shadowMap.enabled = next;
+    }
   });
 
   addButton("Focus Routes", function () {
