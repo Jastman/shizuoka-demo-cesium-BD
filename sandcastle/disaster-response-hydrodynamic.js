@@ -39,7 +39,7 @@
     geocoder: false,
   });
 
-  viewer.scene.globe.depthTestAgainstTerrain = true;
+  viewer.scene.globe.depthTestAgainstTerrain = false;
   viewer.scene.globe.enableLighting = true;
   viewer.scene.globe.showGroundAtmosphere = true;
   viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0e131e");
@@ -213,7 +213,7 @@
           ["${feature['uro:rank_code']} === 3", "color('#ff4500', " + (baseAlpha * 0.9).toFixed(2) + ")"],
           ["${feature['uro:rank_code']} === 2", "color('#ff8c00', " + (baseAlpha * 0.85).toFixed(2) + ")"],
           ["${feature['uro:rank_code']} === 1", "color('#ffd700', " + (baseAlpha * 0.75).toFixed(2) + ")"],
-          ["true", "color('#ffffff', 0.0)"],
+          ["true", "color('#99ccff', " + (baseAlpha * 0.5).toFixed(2) + ")"],
         ],
       },
     });
@@ -405,8 +405,10 @@
     138.3615, 34.9786,
     138.3632, 34.9856,
   ];
-  // Base elevation of Abe River coastal plain (~4 m above WGS84 ellipsoid)
-  const FLOOD_BASE_M = 4;
+  // Flood water body: height:0 with depthTestAgainstTerrain=false means
+  // the polygon renders visibly ON TOP of the terrain surface regardless of
+  // actual terrain elevation. extrudedHeight scales dramatically with level.
+  const FLOOD_BASE_M = 0;
 
   const floodWaterBody = viewer.entities.add({
     name: "Flood simulation water body",
@@ -417,19 +419,18 @@
       height: FLOOD_BASE_M,
       extrudedHeight: new Cesium.CallbackProperty(function (time) {
         const level = getHydroLevel(time);
-        // 1 m gauge = 3 m visual extrusion for dramatic impact
-        return FLOOD_BASE_M + Math.max(0.5, level * 3.0);
+        // 7x scale: 1.5m level → 10.5m tall, 3.9m level → 27.3m tall
+        return Math.max(4, level * 7.0);
       }, false),
       material: new Cesium.ColorMaterialProperty(
         new Cesium.CallbackProperty(function (time) {
           const level = getHydroLevel(time);
-          // t: 0 = 1.5 m (blue), 1 = 4 m+ (deep red)
           const t = Cesium.Math.clamp((level - 1.5) / 2.5, 0.0, 1.0);
           return new Cesium.Color(
-            0.05 + t * 0.70,   // R
+            0.05 + t * 0.70,   // R: blue → red
             0.42 - t * 0.28,   // G
             0.92 - t * 0.68,   // B
-            Cesium.Math.clamp(0.35 + level * 0.07, 0.35, 0.65)
+            Cesium.Math.clamp(0.50 + level * 0.06, 0.50, 0.78)  // more opaque
           );
         }, false)
       ),
