@@ -373,6 +373,87 @@
     })
   );
 
+  // ─── Animated 3D flood water body ─────────────────────────────────────────
+  // Covers the Abe River floodplain (安倍川洪水浸水想定区域) as a rising 3D slab.
+  // Polygon coordinates follow the PLATEAU L2 flood tile footprint.
+  // Color lerps blue→red and height rises with the water gauge.
+  const FLOOD_WATER_FOOTPRINT = [
+    138.3680, 34.9900,
+    138.3755, 34.9868,
+    138.3830, 34.9845,
+    138.3890, 34.9823,
+    138.3935, 34.9778,
+    138.3925, 34.9703,
+    138.3875, 34.9653,
+    138.3792, 34.9638,
+    138.3710, 34.9652,
+    138.3642, 34.9708,
+    138.3615, 34.9786,
+    138.3632, 34.9856,
+  ];
+  // Base elevation of Abe River coastal plain (~4 m above WGS84 ellipsoid)
+  const FLOOD_BASE_M = 4;
+
+  const floodWaterBody = viewer.entities.add({
+    name: "Flood simulation water body",
+    polygon: {
+      hierarchy: new Cesium.PolygonHierarchy(
+        Cesium.Cartesian3.fromDegreesArray(FLOOD_WATER_FOOTPRINT)
+      ),
+      height: FLOOD_BASE_M,
+      extrudedHeight: new Cesium.CallbackProperty(function (time) {
+        const level = getHydroLevel(time);
+        // 1 m gauge = 3 m visual extrusion for dramatic impact
+        return FLOOD_BASE_M + Math.max(0.5, level * 3.0);
+      }, false),
+      material: new Cesium.ColorMaterialProperty(
+        new Cesium.CallbackProperty(function (time) {
+          const level = getHydroLevel(time);
+          // t: 0 = 1.5 m (blue), 1 = 4 m+ (deep red)
+          const t = Cesium.Math.clamp((level - 1.5) / 2.5, 0.0, 1.0);
+          return new Cesium.Color(
+            0.05 + t * 0.70,   // R
+            0.42 - t * 0.28,   // G
+            0.92 - t * 0.68,   // B
+            Cesium.Math.clamp(0.35 + level * 0.07, 0.35, 0.65)
+          );
+        }, false)
+      ),
+      outline: true,
+      outlineColor: new Cesium.CallbackProperty(function (time) {
+        return getDangerState(getHydroLevel(time)).color.withAlpha(0.9);
+      }, false),
+      outlineWidth: 3,
+    },
+  });
+
+  // Depth band labels — thin horizontal slabs at fixed danger thresholds
+  // so viewers can see which "floor" the rising water is at.
+  const depthBands = [
+    { label: "0.5 m", elev: FLOOD_BASE_M + 1.5, color: Cesium.Color.YELLOW },
+    { label: "2.0 m", elev: FLOOD_BASE_M + 6.0, color: Cesium.Color.ORANGE },
+    { label: "3.5 m", elev: FLOOD_BASE_M + 10.5, color: Cesium.Color.RED },
+  ];
+  depthBands.forEach(function (band) {
+    viewer.entities.add({
+      name: "Depth marker " + band.label,
+      position: Cesium.Cartesian3.fromDegrees(138.380, 34.975, band.elev),
+      label: {
+        text: "── " + band.label + " flood threshold",
+        font: "11px monospace",
+        fillColor: band.color,
+        showBackground: true,
+        backgroundColor: Cesium.Color.BLACK.withAlpha(0.55),
+        pixelOffset: new Cesium.Cartesian2(12, 0),
+        horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 12000),
+        scaleByDistance: new Cesium.NearFarScalar(500, 1.0, 8000, 0.5),
+      },
+      show: true,
+    });
+  });
+
+
   const incidentPoints = [
     { name: "Abe River gauge alarm", lon: 138.3895, lat: 34.9768, severity: "high" },
     { name: "Route 1 closure report", lon: 138.3712, lat: 34.9798, severity: "medium" },
@@ -441,7 +522,7 @@
     "<span style='color:#ff4d4d'>●</span> High-severity incident<br/>" +
     "<span style='color:#ffd24d'>●</span> Medium-severity incident<br/>" +
     "<span style='color:#66e0ff'>●</span> Low-severity incident<br/>" +
-    "<span style='color:#66ff66'>●</span> Shelter location<br/>" +
+    "<span style='color:#0d6bcf'>■</span> Flood water body (rises with level)<br/><span style='color:#66ff66'>●</span> Shelter location<br/>" +
     "<span style='color:#00ffff'>━</span> Evacuation route (cyan → orange → red)<br/>" +
     "<small style='color:#aaa'>Flood data: MLIT PLATEAU 2023 安倍川水系</small>";
   viewer.container.appendChild(legend);
@@ -509,8 +590,15 @@
   });
 
   addButton("Focus Flood Zone", function () {
-    const target = activeFloodTileset || floodEntity;
-    viewer.flyTo(target, { duration: 1.8 });
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(138.378, 34.975, 2800),
+      orientation: {
+        heading: Cesium.Math.toRadians(10),
+        pitch: Cesium.Math.toRadians(-42),
+        roll: 0,
+      },
+      duration: 2.0,
+    });
   });
 
   addButton("Focus Water Gauge", function () {
