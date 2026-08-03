@@ -360,14 +360,28 @@
     },
   ];
 
+  // Route material: one persistent object with a CallbackProperty inside.
+  // CRITICAL: never reassign entity.polyline.material per-frame for clampToGround
+  // polylines — it forces GroundPolylinePrimitive to destroy/rebuild every frame
+  // and the primitive is perpetually "rebuilding" and never actually renders.
+  const routeMaterial = new Cesium.ColorMaterialProperty(
+    new Cesium.CallbackProperty(function (time) {
+      const level = getHydroLevel(time);
+      const danger = getDangerState(level);
+      const base = danger.routeColor === Cesium.Color.WHITE
+        ? Cesium.Color.CYAN : danger.routeColor;
+      return base.withAlpha(0.97);
+    }, false)
+  );
+
   const routeEntities = evacuationRoutes.map((route) =>
     viewer.entities.add({
       name: route.name,
       description: route.source,
       polyline: {
         positions: Cesium.Cartesian3.fromDegreesArray(route.positions.flat()),
-        width: 12,
-        material: new Cesium.ColorMaterialProperty(Cesium.Color.CYAN.withAlpha(0.95)),
+        width: 14,
+        material: routeMaterial,
         clampToGround: true,
       },
     })
@@ -540,15 +554,6 @@
     const danger = getDangerState(level);
     const impactedPopulation = Math.round(1200 + level * 640);
     const routeStress = level > 3.2 ? "Closed segments likely" : level > 2.4 ? "Congested" : "Open";
-
-    const routeColor = danger.routeColor === Cesium.Color.WHITE
-      ? Cesium.Color.CYAN
-      : danger.routeColor;
-    routeEntities.forEach((entity) => {
-      entity.polyline.material = new Cesium.ColorMaterialProperty(
-        routeColor.withAlpha(0.97)
-      );
-    });
 
     panel.innerHTML =
       `<b>Shizuoka Response Dashboard</b><br/>` +
