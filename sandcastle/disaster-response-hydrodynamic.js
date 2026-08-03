@@ -39,11 +39,17 @@
   viewer.scene.globe.showGroundAtmosphere = true;
   viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0e131e");
 
+  // Japan bounding box — GSI tiles only exist within this region
+  const JAPAN_RECT = Cesium.Rectangle.fromDegrees(122.93, 20.4, 154.0, 45.6);
+
   viewer.imageryLayers.removeAll();
   const stdMap = viewer.imageryLayers.addImageryProvider(
     new Cesium.UrlTemplateImageryProvider({
       url: GSI_STD_MAP_URL,
       credit: "地理院タイル",
+      minimumLevel: 5,
+      maximumLevel: 18,
+      rectangle: JAPAN_RECT,
     })
   );
   stdMap.alpha = 0.35;
@@ -51,13 +57,18 @@
     new Cesium.UrlTemplateImageryProvider({
       url: GSI_SEAMLESS_PHOTO_URL,
       credit: "国土地理院 シームレス写真",
+      minimumLevel: 5,
       maximumLevel: 18,
+      rectangle: JAPAN_RECT,
     })
   );
   const floodDepth = viewer.imageryLayers.addImageryProvider(
     new Cesium.UrlTemplateImageryProvider({
       url: GSI_FLOOD_DEPTH_URL,
       credit: "国土地理院 重ねるハザードマップ",
+      minimumLevel: 5,
+      maximumLevel: 14,
+      rectangle: JAPAN_RECT,
     })
   );
   floodDepth.alpha = 0.42;
@@ -91,16 +102,7 @@
     },
   });
 
-  if (SHIZUOKA_3D_TILES_URL) {
-    try {
-      const tileset = await Cesium.Cesium3DTileset.fromUrl(SHIZUOKA_3D_TILES_URL);
-      viewer.scene.primitives.add(tileset);
-      viewer.zoomTo(tileset);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("3D Tiles failed to load:", error);
-    }
-  }
+  if (false) { /* SHIZUOKA_3D_TILES_URL block removed — superseded by PLATEAU tilesets above */ }
 
   const start = Cesium.JulianDate.now();
   const stop = Cesium.JulianDate.addHours(start, 6, new Cesium.JulianDate());
