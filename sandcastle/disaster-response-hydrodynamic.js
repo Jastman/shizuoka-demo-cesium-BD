@@ -285,10 +285,13 @@
     },
   });
 
+  // Real designated shelters from PLATEAU 2023 Shizuoka City shelter dataset
+  // (22100_shizuoka-shi_city_2023_shelter.geojson, sourced 2026-08-03)
   const shelters = [
-    { name: "Aoi Ward School Shelter", lon: 138.3778, lat: 34.9856 },
-    { name: "Shimizu Gym Shelter", lon: 138.3926, lat: 34.9832 },
-    { name: "Suruga Community Shelter", lon: 138.4017, lat: 34.9744 },
+    { name: "安西小学校 (Anzai Elem.)", lon: 138.37406, lat: 34.98125, capacity: 705 },
+    { name: "中田小学校 (Nakada Elem.)", lon: 138.39313, lat: 34.96377, capacity: 1219 },
+    { name: "豊田中学校 (Toyota Jr. High)", lon: 138.40888, lat: 34.97105, capacity: 1106 },
+    { name: "井宮小学校 (Imiya Elem.)", lon: 138.36686, lat: 34.98843, capacity: 1001 },
   ];
 
   shelters.forEach((shelter) => {
@@ -302,7 +305,7 @@
         outlineWidth: 2,
       },
       label: {
-        text: shelter.name,
+        text: shelter.name + (shelter.capacity > 0 ? "\n定員 " + shelter.capacity + "名" : ""),
         fillColor: Cesium.Color.WHITE,
         showBackground: true,
         backgroundColor: Cesium.Color.BLACK.withAlpha(0.6),
@@ -315,47 +318,44 @@
     });
   });
 
-  // Driving routes generated with geolocation_route (2026-08-03), then sampled for readability.
+  // Official emergency transport routes from PLATEAU 2023 Shizuoka City dataset
+  // Source: 22100_shizuoka-shi_city_2023_emergency_route.geojson
+  // 静岡県緊急輸送路図 (2019-07) — clipped to Abe River flood zone area
   const evacuationRoutes = [
     {
-      name: "Evacuation route 1 (road-routed)",
-      source: "Driving route (OSM-based) from 138.36140,34.97085 to 138.38315,34.98401",
+      name: "国道362号 (Route 362, 2nd class emergency road)",
+      source: "静岡県緊急輸送路図 第２次緊急輸送道路 — PLATEAU 2023",
       positions: [
-        [138.3614, 34.97085],
-        [138.36261, 34.96827],
-        [138.36357, 34.96918],
-        [138.36276, 34.97155],
-        [138.3615, 34.97467],
-        [138.36268, 34.97633],
-        [138.36546, 34.97636],
-        [138.36864, 34.97739],
-        [138.37191, 34.97897],
-        [138.37452, 34.98024],
-        [138.3768, 34.98136],
-        [138.37904, 34.98286],
-        [138.38023, 34.9835],
-        [138.38176, 34.98326],
-        [138.38319, 34.98294],
-        [138.38315, 34.98401],
+        [138.33022, 34.98407], [138.33239, 34.98377], [138.33354, 34.98362],
+        [138.33469, 34.98332], [138.33634, 34.98235], [138.33711, 34.98193],
+        [138.33852, 34.98143], [138.34224, 34.98049], [138.34461, 34.97981],
+        [138.34566, 34.9794],  [138.34803, 34.97794], [138.34866, 34.97768],
+        [138.35541, 34.97673], [138.35587, 34.97664], [138.36093, 34.97597],
+        [138.36178, 34.97596], [138.3643,  34.97625], [138.36689, 34.97655],
+        [138.36943, 34.9769],  [138.3773,  34.97366], [138.38461, 34.97059],
       ],
     },
     {
-      name: "Evacuation route 2 (road-routed)",
-      source: "Driving route (OSM-based) from 138.40098,34.96799 to 138.39096,34.98297",
+      name: "中島南安倍線 (Nakajima-Minami-Abe, 1st class emergency road)",
+      source: "静岡県緊急輸送路図 第１次緊急輸送道路 — PLATEAU 2023",
       positions: [
-        [138.40098, 34.96799],
-        [138.39971, 34.96903],
-        [138.39811, 34.97007],
-        [138.39682, 34.97123],
-        [138.39487, 34.97299],
-        [138.39336, 34.97479],
-        [138.39218, 34.97662],
-        [138.39162, 34.97747],
-        [138.39097, 34.97821],
-        [138.38979, 34.97939],
-        [138.38856, 34.98041],
-        [138.38972, 34.98183],
-        [138.39096, 34.98297],
+        [138.3748,  34.96173], [138.37624, 34.96097], [138.3788,  34.95942],
+        [138.3791,  34.95922], [138.38024, 34.95799], [138.38135, 34.95655],
+        [138.38205, 34.9557],  [138.38242, 34.95522], [138.3828,  34.95479],
+        [138.38313, 34.95448], [138.38357, 34.95408], [138.38451, 34.95324],
+        [138.38813, 34.95007], [138.38917, 34.94901], [138.38979, 34.94824],
+        [138.39031, 34.94759], [138.3916,  34.94598], [138.39214, 34.9453],
+        [138.39422, 34.94274], [138.39616, 34.94034],
+      ],
+    },
+    {
+      name: "中野小鹿線 (Nakano-Ojika, 2nd class emergency road)",
+      source: "静岡県緊急輸送路図 第２次緊急輸送道路 — PLATEAU 2023",
+      positions: [
+        [138.38813, 34.95007], [138.38981, 34.9511],  [138.39118, 34.95191],
+        [138.39396, 34.95349], [138.3945,  34.95387], [138.39823, 34.95639],
+        [138.39946, 34.95726], [138.40122, 34.95843], [138.40355, 34.95989],
+        [138.40504, 34.96075], [138.40892, 34.96309],
       ],
     },
   ];
@@ -539,7 +539,7 @@
     "<span style='color:#66e0ff'>●</span> Low-severity incident<br/>" +
     "<span style='color:#0d6bcf'>■</span> Flood water body (rises with level)<br/><span style='color:#66ff66'>●</span> Shelter location<br/>" +
     "<span style='color:#00ffff'>━</span> Evacuation route (cyan → orange → red)<br/>" +
-    "<small style='color:#aaa'>Flood data: MLIT PLATEAU 2023 安倍川水系</small>";
+    "<small style='color:#aaa'>Flood &amp; route data: PLATEAU 2023 静岡市 (MLIT)</small>";
   viewer.container.appendChild(legend);
 
   let lastFloodStyleAlpha = -1;
