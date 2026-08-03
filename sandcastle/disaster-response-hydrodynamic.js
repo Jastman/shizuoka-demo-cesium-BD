@@ -39,8 +39,7 @@
     geocoder: false,
   });
 
-  // Keep false: depth-testing hides our flood-zone polygons (height=0 clips under terrain).
-  viewer.scene.globe.depthTestAgainstTerrain = false;
+  viewer.scene.globe.depthTestAgainstTerrain = true;
   viewer.scene.globe.enableLighting = true;
   viewer.scene.globe.showGroundAtmosphere = true;
   viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0e131e");
@@ -141,11 +140,32 @@
   viewer.clock.startTime = start.clone();
   viewer.clock.stopTime = stop.clone();
   viewer.clock.currentTime = start.clone();
-  viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
-  viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER;
-  viewer.clock.canAnimate = true;
-  viewer.clock.multiplier = 120;   // 120x = 6-hour scenario plays in ~3 minutes real time
-  viewer.clock.shouldAnimate = false; // User presses Start Scenario to begin
+  viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
+  viewer.clock.shouldAnimate = false;
+
+  // Manual scenario ticker — bypasses Sandcastle's clock widget entirely.
+  // 120 scenario-seconds per real second → 6 h plays in ~3 min real time.
+  const SCENARIO_SPEED = 120;
+  let scenarioRunning = false;
+  let lastTickMs = null;
+
+  viewer.scene.preUpdate.addEventListener(function () {
+    if (!scenarioRunning) { lastTickMs = null; return; }
+    const nowMs = performance.now();
+    if (lastTickMs !== null) {
+      const dtSec = (nowMs - lastTickMs) / 1000;
+      const next = Cesium.JulianDate.addSeconds(
+        viewer.clock.currentTime, dtSec * SCENARIO_SPEED, new Cesium.JulianDate()
+      );
+      if (Cesium.JulianDate.compare(next, stop) >= 0) {
+        viewer.clock.currentTime = stop.clone();
+        scenarioRunning = false;
+      } else {
+        viewer.clock.currentTime = next;
+      }
+    }
+    lastTickMs = nowMs;
+  });
 
   const waterSamples = [
     { tHours: 0, level: 1.5 },
@@ -346,10 +366,9 @@
       description: route.source,
       polyline: {
         positions: Cesium.Cartesian3.fromDegreesArray(route.positions.flat()),
-        width: 9,
-        material: new Cesium.ColorMaterialProperty(Cesium.Color.WHITE.withAlpha(0.95)),
+        width: 12,
+        material: new Cesium.ColorMaterialProperty(Cesium.Color.CYAN.withAlpha(0.95)),
         clampToGround: true,
-        zIndex: 10,
       },
     })
   );
@@ -423,19 +442,30 @@
     "<span style='color:#ffd24d'>●</span> Medium-severity incident<br/>" +
     "<span style='color:#66e0ff'>●</span> Low-severity incident<br/>" +
     "<span style='color:#66ff66'>●</span> Shelter location<br/>" +
-    "<span style='color:#ffffff'>━</span> Evacuation route (color = danger level)<br/>" +
+    "<span style='color:#00ffff'>━</span> Evacuation route (cyan → orange → red)<br/>" +
     "<small style='color:#aaa'>Flood data: MLIT PLATEAU 2023 安倍川水系</small>";
   viewer.container.appendChild(legend);
 
+  let lastFloodStyleAlpha = -1;
   viewer.scene.preRender.addEventListener(function () {
     const level = getHydroLevel(viewer.clock.currentTime);
+    // Update PLATEAU flood tileset opacity based on current water level (throttled)
+    const floodAlpha = Math.round(Cesium.Math.clamp(0.15 + level * 0.18, 0.15, 0.85) * 20) / 20;
+    if (floodAlpha !== lastFloodStyleAlpha) {
+      lastFloodStyleAlpha = floodAlpha;
+      if (plateauFloodL2 && plateauFloodL2.show) plateauFloodL2.style = makeFloodStyle(floodAlpha);
+      if (plateauFloodL1 && plateauFloodL1.show) plateauFloodL1.style = makeFloodStyle(floodAlpha);
+    }
     const danger = getDangerState(level);
     const impactedPopulation = Math.round(1200 + level * 640);
     const routeStress = level > 3.2 ? "Closed segments likely" : level > 2.4 ? "Congested" : "Open";
 
+    const routeColor = danger.routeColor === Cesium.Color.WHITE
+      ? Cesium.Color.CYAN
+      : danger.routeColor;
     routeEntities.forEach((entity) => {
       entity.polyline.material = new Cesium.ColorMaterialProperty(
-        danger.routeColor.withAlpha(0.97)
+        routeColor.withAlpha(0.97)
       );
     });
 
@@ -461,41 +491,21 @@
   }
 
   addButton("Start Scenario", function () {
-    // Always reset to beginning so the button works even after clock reaches stopTime.
     viewer.clock.currentTime = start.clone();
-    viewer.clock.canAnimate = true;
-    viewer.clock.shouldAnimate = true;
-    if (viewer.clockViewModel) {
-      viewer.clockViewModel.canAnimate = true;
-      viewer.clockViewModel.shouldAnimate = true;
-    }
-    viewer.scene.requestRender();
+    scenarioRunning = true;
   });
 
   addButton("Pause Scenario", function () {
-    viewer.clock.shouldAnimate = false;
-    if (viewer.clockViewModel) {
-      viewer.clockViewModel.shouldAnimate = false;
-    }
-    viewer.scene.requestRender();
+    scenarioRunning = false;
   });
 
   addButton("Resume", function () {
-    viewer.clock.canAnimate = true;
-    viewer.clock.shouldAnimate = true;
-    if (viewer.clockViewModel) {
-      viewer.clockViewModel.canAnimate = true;
-      viewer.clockViewModel.shouldAnimate = true;
-    }
-    viewer.scene.requestRender();
+    scenarioRunning = true;
   });
 
   addButton("Reset Time", function () {
+    scenarioRunning = false;
     viewer.clock.currentTime = start.clone();
-    viewer.clock.shouldAnimate = false;
-    if (viewer.clockViewModel) {
-      viewer.clockViewModel.shouldAnimate = false;
-    }
   });
 
   addButton("Focus Flood Zone", function () {
@@ -542,6 +552,10 @@
   });
 
   addButton("Focus Routes", function () {
-    viewer.flyTo(routeEntities, { duration: 1.8 });
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(138.381, 34.977, 800),
+      orientation: { heading: Cesium.Math.toRadians(340), pitch: Cesium.Math.toRadians(-40), roll: 0 },
+      duration: 1.8,
+    });
   });
 })();
