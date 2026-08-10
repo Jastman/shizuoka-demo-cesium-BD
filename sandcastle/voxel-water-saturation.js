@@ -115,6 +115,28 @@
     .vx-open { position: absolute; z-index: 20; top: 10px; left: 10px; }
     .vx-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
       overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    /* Voxel inspect popup */
+    .vx-inspect {
+      position: absolute; z-index: 30; pointer-events: none;
+      padding: 10px 13px; background: rgba(7,17,28,.97);
+      border: 1px solid var(--vx-accent); border-radius: 10px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.5);
+      font: 12px/1.5 system-ui, sans-serif; color: var(--vx-text);
+      min-width: 200px; max-width: 260px;
+      transform: translate(-50%, calc(-100% - 14px));
+    }
+    .vx-inspect[hidden] { display: none; }
+    .vx-inspect-title { color: var(--vx-accent); font-size: 10px; font-weight: 750;
+      letter-spacing: .1em; text-transform: uppercase; margin-bottom: 5px; }
+    .vx-inspect-row { display: flex; justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,.07); padding: 3px 0; }
+    .vx-inspect-row:last-child { border-bottom: none; }
+    .vx-inspect-key { color: var(--vx-muted); }
+    .vx-inspect-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .vx-inspect-crosshair {
+      position: absolute; z-index: 29; pointer-events: none;
+      width: 18px; height: 18px; transform: translate(-50%, -50%);
+    }
     @media (max-width: 680px) {
       .vx-ui { bottom: auto; max-height: 40vh; }
       .vx-story { right: auto; left: 50%; bottom: 8px;
@@ -127,7 +149,7 @@
   document.head.appendChild(style);
 
   const state = {
-    chapter: 1,
+    chapter: 0,
     view: "saturation",
     aggregation: "average",
     threshold: 0.4,
@@ -136,8 +158,8 @@
     revision: 0,
     selected: null,
     overrideBoost: 0,
-    tourOpen: true,
-    tourPlaying: !reducedMotion,
+    tourOpen: false,
+    tourPlaying: false,
   };
 
   const cameras = [
@@ -408,6 +430,7 @@
         <button type="button" id="vx-open-tour">Open guided tour</button>
       </div>
       <div class="vx-status" id="vx-source-status" role="status">Illustrative derived voxels · public source context only</div>
+      <p style="color:#b9cbd9;font-size:11px;margin:4px 0 10px">💡 Click any voxel in the scene to inspect its analytical value and metadata.</p>
 
       <label class="vx-field">Analytical view
         <select id="vx-view">
@@ -713,6 +736,115 @@
   }
 
   rebuildVoxelPrimitive();
-  flyToChapter(1);
+  flyToChapter(0);
   renderUi();
+
+  // ── Voxel click-to-inspect ───────────────────────────────────────────────
+  // Crosshair SVG
+  const crosshair = document.createElement("div");
+  crosshair.className = "vx-inspect-crosshair";
+  crosshair.innerHTML = `<svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="9" cy="9" r="7" stroke="#56d6c9" stroke-width="1.5" opacity="0.9"/>
+    <line x1="9" y1="2" x2="9" y2="6" stroke="#56d6c9" stroke-width="1.5"/>
+    <line x1="9" y1="12" x2="9" y2="16" stroke="#56d6c9" stroke-width="1.5"/>
+    <line x1="2" y1="9" x2="6" y2="9" stroke="#56d6c9" stroke-width="1.5"/>
+    <line x1="12" y1="9" x2="16" y2="9" stroke="#56d6c9" stroke-width="1.5"/>
+  </svg>`;
+  crosshair.hidden = true;
+  viewer.container.appendChild(crosshair);
+
+  const inspectPopup = document.createElement("div");
+  inspectPopup.className = "vx-inspect";
+  inspectPopup.setAttribute("role", "tooltip");
+  inspectPopup.hidden = true;
+  viewer.container.appendChild(inspectPopup);
+
+  const labelForView = {
+    saturation: "Water saturation",
+    change: "Change from baseline",
+    wetness: "Topographic wetness",
+    runoff: "Runoff risk index",
+    simulation: "Infiltration sim",
+  };
+
+  viewer.screenSpaceEventHandler.setInputAction((event) => {
+    const pick = viewer.scene.pick(event.position);
+
+    // Dismiss if clicking off a voxel
+    if (!Cesium.defined(pick) || pick.primitive !== voxelPrimitive) {
+      inspectPopup.hidden = true;
+      crosshair.hidden = true;
+      return;
+    }
+
+    // Get voxel coordinates from the pick result
+    const tileCoords = pick.voxelCoordinates;
+    const tileLevel = pick.voxelLevel ?? 0;
+
+    // Reconstruct normalized position within the voxel volume
+    // from the pick ray intersection
+    const cartesian = viewer.scene.pickPosition(event.position);
+    if (!Cesium.defined(cartesian)) return;
+
+    // Transform pick position into the voxel's local ENU frame
+    const invTransform = Cesium.Matrix4.inverseTransformation(
+      voxelPrimitive.modelMatrix, new Cesium.Matrix4()
+    );
+    const localPos = Cesium.Matrix4.multiplyByPoint(invTransform, cartesian, new Cesium.Cartesian3());
+    // shapeTransform maps [-1,1]^3 → ENU meters; invert to get normalized [0,1] coords
+    const halfExtents = new Cesium.Cartesian3(10500 / 2, 14500 / 2, 2300 / 2);
+    const nx = Cesium.Math.clamp((localPos.x / halfExtents.x + 1) / 2, 0, 1);
+    const ny = Cesium.Math.clamp((localPos.y / halfExtents.y + 1) / 2, 0, 1);
+    const nz = Cesium.Math.clamp((localPos.z / halfExtents.z + 1) / 2, 0, 1);
+
+    const value = analyticalValue(nx, ny, nz, state.scenarioHour, state.view, state.aggregation);
+    const r = risk => {
+      if (risk >= 0.55) return "HIGH";
+      if (risk >= 0.35) return "MODERATE";
+      if (risk >= 0.15) return "LOW";
+      return "MINIMAL";
+    };
+
+    // Convert normalized to approximate geographic coords
+    // Voxel center: 138.36°E, 35.09°N; extents ~10.5km E-W, ~14.5km N-S
+    const lon = (138.36 - 0.05) + nx * (10500 / 111320 * (1 / Math.cos(35.09 * Math.PI / 180)));
+    const lat = (35.09 - 0.065) + ny * (14500 / 111320);
+    const elev = Math.round(nz * 2300);
+
+    const viewLabel = labelForView[state.view] || state.view;
+    inspectPopup.innerHTML = `
+      <div class="vx-inspect-title">Voxel Inspector</div>
+      <div class="vx-inspect-row"><span class="vx-inspect-key">View</span><span class="vx-inspect-val">${viewLabel}</span></div>
+      <div class="vx-inspect-row"><span class="vx-inspect-key">Value</span><span class="vx-inspect-val">${value.toFixed(4)}</span></div>
+      <div class="vx-inspect-row"><span class="vx-inspect-key">Risk class</span><span class="vx-inspect-val">${r(value)}</span></div>
+      <div class="vx-inspect-row"><span class="vx-inspect-key">Elev (approx)</span><span class="vx-inspect-val">${elev} m</span></div>
+      <div class="vx-inspect-row"><span class="vx-inspect-key">Lon / Lat</span><span class="vx-inspect-val">${lon.toFixed(4)}° / ${lat.toFixed(4)}°</span></div>
+      <div class="vx-inspect-row"><span class="vx-inspect-key">Normalized XYZ</span><span class="vx-inspect-val">${nx.toFixed(2)}, ${ny.toFixed(2)}, ${nz.toFixed(2)}</span></div>
+      <div class="vx-inspect-row"><span class="vx-inspect-key">Storm hour</span><span class="vx-inspect-val">${state.scenarioHour} h</span></div>
+      <div class="vx-inspect-row"><span class="vx-inspect-key">Aggregation</span><span class="vx-inspect-val">${state.aggregation}</span></div>
+      <div class="vx-inspect-row" style="color:rgba(185,203,217,.55);font-size:10px;padding-top:4px">
+        <span>Illustrative · not a field measurement</span>
+      </div>`;
+
+    // Position popup and crosshair at click pixel
+    const px = event.position.x;
+    const py = event.position.y;
+    inspectPopup.style.left = px + "px";
+    inspectPopup.style.top = py + "px";
+    crosshair.style.left = px + "px";
+    crosshair.style.top = py + "px";
+    inspectPopup.hidden = false;
+    crosshair.hidden = false;
+    viewer.scene.requestRender();
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+  // Dismiss popup on right-click or Escape
+  viewer.screenSpaceEventHandler.setInputAction(() => {
+    inspectPopup.hidden = true;
+    crosshair.hidden = true;
+  }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { inspectPopup.hidden = true; crosshair.hidden = true; }
+  });
 })();
