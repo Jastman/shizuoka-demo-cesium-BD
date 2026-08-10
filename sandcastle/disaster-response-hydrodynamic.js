@@ -227,6 +227,21 @@
     .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
     .legend-line { width: 18px; height: 4px; border-radius: 2px; flex-shrink: 0; }
     .legend-box { width: 14px; height: 10px; border-radius: 2px; flex-shrink: 0; opacity: .7; }
+    /* Water level gauge bar */
+    .gauge-wrap { margin: 10px 0 4px; }
+    .gauge-track { position: relative; height: 26px; border-radius: 8px;
+      background: rgba(255,255,255,.08); border: 1px solid var(--line); overflow: hidden; }
+    .gauge-fill { position: absolute; inset: 0 auto 0 0; height: 100%;
+      background: linear-gradient(90deg, #4575b4, #74add1, #fdae61, #f46d43, #a50026);
+      background-size: 500% 100%; background-position: 0% 50%;
+      transition: width 0.4s ease, background-position 0.4s ease;
+      border-radius: 0; }
+    .gauge-ticks { position: absolute; inset: 0; display: flex;
+      justify-content: space-between; align-items: center;
+      padding: 0 6px; pointer-events: none; }
+    .gauge-ticks span { font-size: 9px; color: rgba(255,255,255,.45); font-weight: 600; }
+    .gauge-label { display: block; margin-top: 4px; font-size: 10px;
+      color: var(--muted); letter-spacing: .06em; }
     @media (max-width: 700px) {
       .panel { max-height: 45vh; top: 8px; right: 8px; left: 8px; width: auto; }
       .status-badge { bottom: 190px; }
@@ -263,6 +278,15 @@
       <div class="metric"><span id="lbl-level"></span><strong id="fl-level">—</strong></div>
       <div class="metric"><span id="lbl-phase"></span><strong id="fl-phase">—</strong></div>
       <div class="metric"><span id="lbl-routes"></span><strong id="fl-routes">—</strong></div>
+    </div>
+    <div class="gauge-wrap" aria-label="Water level gauge" title="Illustrative water level (max 5 m)">
+      <div class="gauge-track" id="gauge-track">
+        <div class="gauge-fill" id="gauge-fill"></div>
+        <div class="gauge-ticks">
+          <span>5 m</span><span>4 m</span><span>3 m</span><span>2 m</span><span>1 m</span><span>0</span>
+        </div>
+      </div>
+      <span class="gauge-label">▲ Abe River Level (illustrative)</span>
     </div>
     <div class="controls" aria-label="Scenario controls">
       <button id="fl-play" class="primary" type="button"></button>
@@ -792,9 +816,10 @@
 
   function goToStep(index, moveCamera = true) {
     clearTourAuto();
-    // Exit old step
-    if (state.tourStep !== index && tourDefs[state.tourStep].onExit) {
-      tourDefs[state.tourStep].onExit();
+    // Exit old step (guard: only if we have a valid previous step AND it's different)
+    const prevDef = tourDefs[state.tourStep];
+    if (prevDef && state.tourStep !== index && prevDef.onExit) {
+      prevDef.onExit();
     }
     state.tourStep = ((index % tourDefs.length) + tourDefs.length) % tourDefs.length;
     const def = tourDefs[state.tourStep];
@@ -836,10 +861,11 @@
 
   function startTour() {
     state.tourPaused = false;
-    state.tourStep = -1; // force onExit/onEnter for step 0
     tour.hidden = false;
     legend.hidden = false;
-    goToStep(0);
+    // Reset to step 0 — skip onExit guard since we're initializing
+    state.tourStep = 0;
+    goToStep(0, true);
     tour.querySelector("#tour-title").focus({ preventScroll: true });
   }
 
@@ -914,12 +940,27 @@
   });
 
   // ── Clock tick ────────────────────────────────────────────────────────────
+  const gaugeFill = panel.querySelector("#gauge-fill");
+  const MAX_LEVEL = 5; // meters (gauge scale max)
   viewer.clock.onTick.addEventListener((clock) => {
     const level = modelLevel(clock.currentTime);
     const r = risk(level);
     panel.querySelector("#fl-level").textContent = `${level.toFixed(2)} m`;
     panel.querySelector("#fl-phase").textContent = r.phase;
     panel.querySelector("#fl-routes").textContent = r.route;
+    // Drive gauge bar fill (0–5 m scale) and color ramp position
+    const pct = Math.min(100, (level / MAX_LEVEL) * 100);
+    gaugeFill.style.width = pct + "%";
+    // background-position drives the color ramp: 0% = blue (low), 100% = red (high)
+    gaugeFill.style.backgroundPosition = pct + "% 50%";
+    // Update gauge track border color to match risk
+    const rgbMap = {
+      Monitor: "rgba(65,217,255,.5)",
+      Prepare: "rgba(253,174,97,.6)",
+      Mobilize: "rgba(244,109,67,.7)",
+      Respond: "rgba(165,0,38,.8)"
+    };
+    panel.querySelector("#gauge-track").style.borderColor = rgbMap[r.phase] || "rgba(255,255,255,.14)";
     if (state.running && Cesium.JulianDate.secondsDifference(stop, clock.currentTime) <= 0) {
       state.running = false;
       clock.shouldAnimate = false;
