@@ -1,36 +1,296 @@
-// ==============================================================================
-// Demo 5: Time-Series Point Cloud Change Detection – Shizuoka Foothills
-// Production-quality architecture with verified real data + illustrative change
-// ==============================================================================
-// VERIFIED DATA SOURCES (Official Cesium Ion Assets & Public Services):
-// Terrain: Cesium Ion Asset #2767062 (Japan Regional Terrain, 10m resolution)
-// Buildings: Cesium Ion Asset #2602291 (Japan Buildings 3D Tiles)
-// Basemap: Sandcastle's current default base layer
-//
-// REAL PUBLIC POINT CLOUD DATASETS (Virtual Shizuoka / GEOSPATIAL.JP):
-// https://www.geospatial.jp/ckan/dataset?q=VIRTUAL+SHIZUOKA
-// - shizuoka-2019-pointcloud: Shizuoka Prefecture LAS archives
-// - shizuoka-2021-pointcloud: Shizuoka Prefecture LAS archives
-// - Publisher: Shizuoka Prefecture; catalog terms: CC BY 4.0 / ODbL
-// CURRENT LIMITATION: Catalog extents overlap, but usable 2019/2021 epoch overlap
-//   remains a candidate requiring tile-level validation. The archives are not yet
-//   converted to streamable Cesium 3D Tiles.
-//
-// ILLUSTRATIVE ELEMENTS (Clearly Labeled):
-// Forest Point Cloud Grid: Synthetic 12×10 grid 2020→2025 (based on realistic patterns)
-// HEIGHT CHANGE: Illustrative delta patterns until real PSS epochs are tiled
-//
-// GEOGRAPHIC NARRATIVE:
-// Mt. Fuji (3,776m) → Abe River foothills → Shizuoka city urban transition → Coast
-// Demonstrates mountain-to-ocean digital twin workflow for climate monitoring
-//
-// NEXT PHASE (for Jake/PSS):
-// 1. Validate geographic overlap between shizuoka-2019 & shizuoka-2021 datasets
-// 2. Convert overlapping regions to Cesium 3D Tiles (.pnts format)
-// 3. Upload to Cesium Ion as two separate assets (one per epoch)
-// 4. Update Demo 5 code with Ion asset IDs
-// 5. Demo will stream real point clouds and compute measured Δheight
-// ==============================================================================
+// Time-Series Canopy Change — Shizuoka Prefecture
+// Verified context: Japan regional terrain (ion 2767062) and Japan Buildings
+// (ion 2602291). The analytical grid and its 2020–2025 values are illustrative.
+
+const TRANSLATIONS = {
+  en: {
+    documentTitle: "Shizuoka Canopy Change Explorer",
+    context: "Shizuoka Prefecture planning workflow",
+    title: "Canopy Change Explorer",
+    subtitle:
+      "Explore an illustrative two-epoch canopy assessment in the Abe River foothills, then follow its regional planning context.",
+    mapAria:
+      "Interactive 3D map of Shizuoka Prefecture. Select a canopy cell for details or use the camera presets for keyboard navigation.",
+    languageLabel: "Language",
+    tourHeading: "Guided mountain-to-coast tour",
+    tourHelp:
+      "Follow seven stops linking the canopy cells to Shizuoka Prefecture's terrain, city, and watershed context.",
+    tourStart: "Start autoplay tour",
+    tourDialogTitle: "Guided tour",
+    tourPreparing: "Preparing the first stop…",
+    tourPrevious: "← Previous",
+    tourNext: "Next →",
+    tourPause: "Pause",
+    tourResume: "Resume",
+    tourRestart: "Restart",
+    tourClose: "Close",
+    tourProgressLabel: "Time remaining in this tour stop",
+    modeHeading: "Analysis mode",
+    modeYear1: "2020 baseline",
+    modeYear5: "2025 scenario",
+    modeChange: "Height change",
+    modeCarbon: "Carbon estimate",
+    animate: "Animate 2020 to 2025",
+    reset: "Reset demo",
+    kpiHeading: "Illustrative indicators",
+    kpiView: "View",
+    kpiCells: "Grid cells",
+    kpiLoss: "Significant loss",
+    kpiGrowth: "Significant growth",
+    kpiMeanDelta: "Mean height delta",
+    kpiCarbon: "Modeled carbon delta",
+    warning:
+      "Each 100 × 100 m cell is an illustrative spatial aggregation of canopy height over its footprint. Height change and carbon outputs are synthetic, not measured observations or decision-grade estimates.",
+    selectionHeading: "Selected canopy cell",
+    selectionEmpty:
+      "Select a cell on the map to inspect its illustrative values.",
+    selectionCell: "Cell",
+    selectionCenter: "Center",
+    selectionYear1: "2020 height",
+    selectionYear5: "2025 height",
+    selectionChange: "Delta classification",
+    selectionCarbon: "Modeled carbon delta",
+    selectionMode: "Current mode value",
+    selectionClear: "Clear selection",
+    cameraHeading: "Camera",
+    cameraInitial: "Canopy close-up",
+    cameraOverview: "Regional overview",
+    cameraFoothills: "Foothills",
+    cameraCity: "Shizuoka city",
+    sourceSummary: "Data provenance and limitations",
+    sourceTerrain:
+      "Terrain: Cesium ion asset 2767062, Japan regional terrain.",
+    sourceBuildings:
+      "Buildings: Cesium ion asset 2602291, Japan Buildings 3D Tiles.",
+    sourceCandidate: "Public source candidate:",
+    source2019: "Shizuoka 2019 point cloud",
+    source2021: "Shizuoka 2021 point cloud",
+    sourcePublisher:
+      "Publisher: Shizuoka Prefecture via GEOSPATIAL.JP / VIRTUAL SHIZUOKA.",
+    sourceLicense: "Catalog terms: dual licensed CC BY 4.0 / ODbL.",
+    sourceOverlap:
+      "Both catalogs use JGD2011 / Japan Plane Rectangular CS VIII. Their catalog extents overlap, but usable epoch overlap still requires tile-level validation.",
+    sourceProduction:
+      "The public LAS archives are not loaded here. Production use requires validated overlapping tiles converted to streamable 3D Tiles and uploaded as separate epoch assets.",
+    legendYear1: "2020 canopy-height legend",
+    legendYear5: "2025 canopy-height legend",
+    legendChange: "Height-change legend",
+    legendCarbon: "Modeled carbon legend",
+    legendLow: "Lower",
+    legendMedium: "Medium",
+    legendHigh: "Higher",
+    legendLoss: "Loss",
+    legendStable: "Stable",
+    legendGrowth: "Growth",
+    classificationLoss: "Loss",
+    classificationStable: "Stable",
+    classificationGrowth: "Growth",
+    modeLabelYear1: "2020 Baseline",
+    modeLabelYear5: "2025 Scenario",
+    modeLabelChange: "2020–2025 Change",
+    modeLabelCarbon: "Carbon Estimate",
+    loadingTerrain: "Loading Japan regional terrain…",
+    loadingGrid: "Placing the illustrative grid on terrain…",
+    ready:
+      "Ready. Select a canopy cell or choose an analysis mode; all change outputs are illustrative.",
+    terrainError: "Terrain failed to load: {message}",
+    gridError: "Grid placement failed: {message}",
+    selectedMode: "{mode} mode selected.",
+    selectedCell: "Selected {cell}.",
+    clearedSelection: "Cell selection cleared.",
+    animationRunning:
+      "Animating the illustrative canopy from 2020 to 2025.",
+    animationReduced:
+      "2025 scenario shown without animation because reduced motion is enabled.",
+    animationComplete: "Animation complete. 2025 scenario shown.",
+    cameraSelected: "{camera} camera selected.",
+    resetComplete: "Demo reset to the 2020 baseline and canopy close-up.",
+    tourStarted: "Autoplay tour started.",
+    tourReduced:
+      "Reduced motion is enabled. The tour is paused and static; use Previous or Next to change stops.",
+    tourStop: "Tour stop {current} of {total}: {title}.",
+    tourPaused:
+      "Autoplay paused at stop {current}. Select Resume to continue.",
+    tourResumed: "Autoplay resumed at stop {current}.",
+    tourManualReduced:
+      "Reduced motion keeps the tour static. Use Previous or Next to change stops.",
+    tourComplete: "Tour complete",
+    tourCompleteDescription:
+      "The tour finishes at the regional overview. Restart it or close these controls.",
+    tourCompleteStatus:
+      "Tour complete at the Shizuoka regional overview.",
+    tourClosed: "Guided tour closed.",
+    progressRemaining: "{percent}% remaining",
+    stepFujiTitle: "Mt. Fuji headwaters",
+    stepFujiDescription:
+      "Begin at Shizuoka Prefecture's highest terrain. This broad view establishes the elevation and watershed context that connects mountain forests to downstream communities.",
+    stepBaselineTitle: "Abe River foothills — 2020",
+    stepBaselineDescription:
+      "The close-up reveals 120 Entity API cells. Each cell aggregates an illustrative canopy-height value over a 100 × 100 m footprint rather than representing an individual tree or native voxel.",
+    stepScenarioTitle: "Abe River foothills — 2025",
+    stepScenarioDescription:
+      "The scenario applies deterministic growth, stable, and disturbance patterns to the same footprints, allowing direct comparison without changing the analytical grid.",
+    stepChangeTitle: "Change detection",
+    stepChangeDescription:
+      "The diverging classification emphasizes loss in red, stable cells in neutral gray, and growth in green. Select any cell to inspect its exact modeled delta.",
+    stepCarbonTitle: "Modeled carbon response",
+    stepCarbonDescription:
+      "A sequential blue ramp shows the relative modeled carbon delta derived from canopy-height change and cell area. It is an illustrative planning signal, not an inventory.",
+    stepCityTitle: "Shizuoka city context",
+    stepCityDescription:
+      "Japan Buildings places the foothill analysis within the urban system downstream. This connects environmental monitoring to infrastructure and land-management decisions.",
+    stepOverviewTitle: "Regional overview",
+    stepOverviewDescription:
+      "Finish with the complete mountain-to-coast planning extent. The canopy grid remains one local analytical layer within Shizuoka Prefecture's wider terrain, settlement, and watershed context.",
+  },
+  ja: {
+    documentTitle: "静岡県 樹冠変化エクスプローラー",
+    context: "静岡県の計画検討ワークフロー",
+    title: "樹冠変化エクスプローラー",
+    subtitle:
+      "安倍川上流域の2時点の樹冠評価（説明用）を確認し、静岡県全体の計画背景へ展開します。",
+    mapAria:
+      "静岡県のインタラクティブ3D地図。樹冠セルを選択して詳細を確認するか、カメラプリセットを使用してください。",
+    languageLabel: "言語",
+    tourHeading: "山地から海岸までのガイドツアー",
+    tourHelp:
+      "樹冠セルと静岡県の地形・市街地・流域の関係を7つの地点で確認します。",
+    tourStart: "自動ツアーを開始",
+    tourDialogTitle: "ガイドツアー",
+    tourPreparing: "最初の地点を準備しています…",
+    tourPrevious: "← 前へ",
+    tourNext: "次へ →",
+    tourPause: "一時停止",
+    tourResume: "再開",
+    tourRestart: "最初から",
+    tourClose: "閉じる",
+    tourProgressLabel: "この地点の残り時間",
+    modeHeading: "解析モード",
+    modeYear1: "2020年 基準",
+    modeYear5: "2025年 シナリオ",
+    modeChange: "樹高変化",
+    modeCarbon: "炭素推定",
+    animate: "2020年から2025年を再生",
+    reset: "デモをリセット",
+    kpiHeading: "説明用指標",
+    kpiView: "表示",
+    kpiCells: "グリッドセル",
+    kpiLoss: "顕著な減少",
+    kpiGrowth: "顕著な増加",
+    kpiMeanDelta: "平均樹高変化",
+    kpiCarbon: "モデル炭素変化",
+    warning:
+      "各100 × 100 mセルは、その範囲内の樹冠高を空間集約した説明用データです。樹高変化と炭素量は合成値であり、実測値や意思決定用の推定値ではありません。",
+    selectionHeading: "選択した樹冠セル",
+    selectionEmpty: "地図上のセルを選択すると説明用の値を確認できます。",
+    selectionCell: "セル",
+    selectionCenter: "中心位置",
+    selectionYear1: "2020年の高さ",
+    selectionYear5: "2025年の高さ",
+    selectionChange: "変化区分",
+    selectionCarbon: "モデル炭素変化",
+    selectionMode: "現在のモード値",
+    selectionClear: "選択を解除",
+    cameraHeading: "カメラ",
+    cameraInitial: "樹冠の近接表示",
+    cameraOverview: "地域全体",
+    cameraFoothills: "山麓",
+    cameraCity: "静岡市",
+    sourceSummary: "データ出典と制約",
+    sourceTerrain:
+      "地形：Cesium ionアセット2767062（日本地域地形）。",
+    sourceBuildings:
+      "建物：Cesium ionアセット2602291（Japan Buildings 3D Tiles）。",
+    sourceCandidate: "公開データ候補：",
+    source2019: "静岡県2019年点群",
+    source2021: "静岡県2021年点群",
+    sourcePublisher:
+      "公開者：静岡県（GEOSPATIAL.JP / VIRTUAL SHIZUOKA経由）。",
+    sourceLicense: "カタログ利用条件：CC BY 4.0 / ODbLのデュアルライセンス。",
+    sourceOverlap:
+      "両カタログはJGD2011／平面直角座標系VIII系を使用しています。カタログ範囲は重なりますが、利用可能な時点間の重複はタイル単位での検証が必要です。",
+    sourceProduction:
+      "公開LASアーカイブはこのデモでは読み込んでいません。実運用には、重複タイルを検証し、ストリーミング可能な3D Tilesへ変換して時点別アセットとして公開する必要があります。",
+    legendYear1: "2020年 樹冠高凡例",
+    legendYear5: "2025年 樹冠高凡例",
+    legendChange: "樹高変化凡例",
+    legendCarbon: "モデル炭素量凡例",
+    legendLow: "低",
+    legendMedium: "中",
+    legendHigh: "高",
+    legendLoss: "減少",
+    legendStable: "安定",
+    legendGrowth: "増加",
+    classificationLoss: "減少",
+    classificationStable: "安定",
+    classificationGrowth: "増加",
+    modeLabelYear1: "2020年 基準",
+    modeLabelYear5: "2025年 シナリオ",
+    modeLabelChange: "2020–2025年 変化",
+    modeLabelCarbon: "炭素推定",
+    loadingTerrain: "日本地域地形を読み込んでいます…",
+    loadingGrid: "説明用グリッドを地形上に配置しています…",
+    ready:
+      "準備完了。樹冠セルまたは解析モードを選択してください。変化量はすべて説明用です。",
+    terrainError: "地形を読み込めませんでした：{message}",
+    gridError: "グリッドを配置できませんでした：{message}",
+    selectedMode: "{mode}モードを選択しました。",
+    selectedCell: "{cell}を選択しました。",
+    clearedSelection: "セルの選択を解除しました。",
+    animationRunning: "2020年から2025年までの説明用樹冠変化を再生中です。",
+    animationReduced:
+      "視覚効果を減らす設定のため、アニメーションなしで2025年シナリオを表示しました。",
+    animationComplete: "再生が完了し、2025年シナリオを表示しています。",
+    cameraSelected: "カメラを「{camera}」に移動しました。",
+    resetComplete: "2020年基準と樹冠の近接表示にリセットしました。",
+    tourStarted: "自動ツアーを開始しました。",
+    tourReduced:
+      "視覚効果を減らす設定のため、ツアーは停止した静止状態です。「前へ」または「次へ」で地点を変更してください。",
+    tourStop: "ツアー {current}/{total}：{title}。",
+    tourPaused: "ツアーを地点{current}で一時停止しました。「再開」で続行します。",
+    tourResumed: "ツアーを地点{current}から再開しました。",
+    tourManualReduced:
+      "視覚効果を減らす設定では静止状態を維持します。「前へ」または「次へ」で地点を変更してください。",
+    tourComplete: "ツアー完了",
+    tourCompleteDescription:
+      "地域全体の表示で終了しました。最初から再開するか、この操作パネルを閉じてください。",
+    tourCompleteStatus: "静岡県の地域全体表示でツアーが完了しました。",
+    tourClosed: "ガイドツアーを閉じました。",
+    progressRemaining: "残り{percent}%",
+    stepFujiTitle: "富士山の源流域",
+    stepFujiDescription:
+      "静岡県で最も標高の高い地形から開始します。山地の森林と下流域の地域をつなぐ標高・流域の背景を広域で確認します。",
+    stepBaselineTitle: "安倍川山麓 — 2020年",
+    stepBaselineDescription:
+      "近接表示ではEntity APIで構成した120セルを確認できます。各セルは個々の樹木やネイティブVoxelではなく、100 × 100 m範囲の説明用樹冠高を集約したものです。",
+    stepScenarioTitle: "安倍川山麓 — 2025年",
+    stepScenarioDescription:
+      "同じ範囲に決定論的な成長・安定・撹乱パターンを適用し、解析グリッドを変えずに2時点を直接比較します。",
+    stepChangeTitle: "変化検出",
+    stepChangeDescription:
+      "発散型の区分で減少を赤、安定を中立グレー、増加を緑で表示します。セルを選択するとモデル化された変化量を確認できます。",
+    stepCarbonTitle: "モデル炭素応答",
+    stepCarbonDescription:
+      "連続する青色ランプで、樹冠高変化とセル面積から算出した相対的なモデル炭素変化を表示します。森林簿ではなく説明用の計画指標です。",
+    stepCityTitle: "静岡市の都市背景",
+    stepCityDescription:
+      "Japan Buildingsにより山麓解析を下流の都市システムの中に位置づけ、環境モニタリングとインフラ・土地管理の判断を結び付けます。",
+    stepOverviewTitle: "地域全体",
+    stepOverviewDescription:
+      "山地から海岸までの計画範囲全体で終了します。樹冠グリッドは、静岡県の地形・集落・流域という広い背景に含まれる局所解析レイヤーです。",
+  },
+};
+
+let currentLanguage = "en";
+
+function translate(key, replacements = {}) {
+  const template =
+    TRANSLATIONS[currentLanguage][key] ?? TRANSLATIONS.en[key] ?? key;
+  return Object.entries(replacements).reduce(
+    (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+    template
+  );
+}
 
 function injectDemoShell() {
   document.documentElement.lang = "en";
@@ -63,6 +323,7 @@ function injectDemoShell() {
       --warning-bg: #3f300b;
       --warning-border: #d4a72c;
       --focus: #ffd75e;
+      --danger: #ff6b64;
     }
 
     html,
@@ -96,7 +357,7 @@ function injectDemoShell() {
     .change-demo-panel {
       position: absolute;
       inset: 12px auto 12px 12px;
-      width: min(370px, calc(100vw - 24px));
+      width: min(390px, calc(100vw - 24px));
       overflow: auto;
       overscroll-behavior: contain;
       scrollbar-color: #587185 transparent;
@@ -117,13 +378,12 @@ function injectDemoShell() {
       border-bottom: 1px solid var(--panel-border);
     }
 
-    .change-demo-eyebrow {
-      margin: 0 0 4px;
+    .change-demo-context {
+      margin: 0 0 6px;
       color: var(--accent);
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
     }
 
     .change-demo-title {
@@ -143,6 +403,31 @@ function injectDemoShell() {
 
     .change-demo-subtitle {
       margin: 6px 0 0;
+    }
+
+    .change-demo-language {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .change-demo-language label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .change-demo-select {
+      min-height: 44px;
+      padding: 8px 34px 8px 10px;
+      border: 1px solid #688399;
+      border-radius: 8px;
+      background: #162a37;
+      color: var(--text);
+      font: inherit;
+      font-weight: 700;
     }
 
     .change-demo-section {
@@ -181,7 +466,7 @@ function injectDemoShell() {
     }
 
     .change-demo-button {
-      min-height: 42px;
+      min-height: 44px;
       padding: 8px 10px;
       border: 1px solid #688399;
       border-radius: 8px;
@@ -198,14 +483,15 @@ function injectDemoShell() {
       background: var(--button-hover);
     }
 
-    .change-demo-button[aria-pressed="true"],
-    .change-demo-button--primary {
-      border-color: var(--accent);
-      background: var(--accent);
-      color: var(--accent-ink);
+    .change-demo-panel button.change-demo-button[aria-pressed="true"],
+    .change-demo-panel button.change-demo-button.change-demo-button--primary {
+      border-color: var(--accent) !important;
+      background-color: var(--accent) !important;
+      color: var(--accent-ink) !important;
     }
 
     .change-demo-button:focus-visible,
+    .change-demo-select:focus-visible,
     .change-demo-panel a:focus-visible,
     .change-demo-panel summary:focus-visible {
       outline: 3px solid var(--focus);
@@ -269,10 +555,11 @@ function injectDemoShell() {
 
     .change-demo-tour-card {
       margin-top: 10px;
-      padding: 10px;
-      border: 1px solid #40586a;
-      border-radius: 8px;
-      background: rgba(23, 40, 52, 0.85);
+      padding: 12px;
+      border: 1px solid #567185;
+      border-radius: 10px;
+      background: #162834;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
     }
 
     .change-demo-tour-title {
@@ -281,11 +568,90 @@ function injectDemoShell() {
     }
 
     .change-demo-tour-subtitle {
-      min-height: 2.4em;
-      margin: 4px 0 9px;
+      margin: 6px 0 12px;
       color: var(--muted);
-      font-size: 0.78rem;
-      line-height: 1.4;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .change-demo-tour-launch {
+      width: 100%;
+      margin-top: 10px;
+      box-shadow: 0 6px 18px rgba(120, 224, 246, 0.2);
+    }
+
+    .change-demo-progress {
+      height: 8px;
+      margin: 0 0 12px;
+      overflow: hidden;
+      border: 1px solid #506b7d;
+      border-radius: 999px;
+      background: #07141b;
+    }
+
+    .change-demo-progress-bar {
+      width: 100%;
+      height: 100%;
+      background: var(--accent);
+      transform: scaleX(1);
+      transform-origin: left center;
+    }
+
+    .change-demo-tour-nav {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .change-demo-tour-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .change-demo-selection {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+    }
+
+    .change-demo-selection-row {
+      display: grid;
+      grid-template-columns: minmax(105px, 0.8fr) minmax(0, 1.2fr);
+      gap: 10px;
+      padding-bottom: 7px;
+      border-bottom: 1px solid rgba(73, 98, 116, 0.5);
+    }
+
+    .change-demo-selection-row:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .change-demo-selection dt {
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+
+    .change-demo-selection dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+      font-size: 0.8rem;
+      font-weight: 750;
+      text-align: end;
+    }
+
+    .change-demo-selection-empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .change-demo-clear {
+      width: 100%;
+      margin-top: 10px;
     }
 
     .change-demo-legend {
@@ -309,6 +675,10 @@ function injectDemoShell() {
       height: 12px;
       border: 1px solid rgba(255, 255, 255, 0.7);
       border-radius: 3px;
+    }
+
+    .change-demo-swatch--gradient {
+      width: 42px;
     }
 
     .change-demo-source-list {
@@ -350,6 +720,10 @@ function injectDemoShell() {
       .change-demo-section {
         padding: 11px 12px;
       }
+
+      .change-demo-panel {
+        font-size: 0.98rem;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -360,6 +734,10 @@ function injectDemoShell() {
         transition-duration: 0.001ms !important;
         animation-duration: 0.001ms !important;
         animation-iteration-count: 1 !important;
+      }
+
+      .change-demo-progress-bar {
+        transition: none !important;
       }
     }
 
@@ -379,97 +757,121 @@ function injectDemoShell() {
   shell.innerHTML = `
     <aside class="change-demo-panel" aria-labelledby="change-demo-title">
       <header class="change-demo-header">
-        <p class="change-demo-eyebrow">Virtual Shizuoka workflow</p>
-        <h1 class="change-demo-title" id="change-demo-title">Canopy Change Explorer</h1>
-        <p class="change-demo-subtitle">
-          An illustrative two-epoch monitoring workflow from Mt. Fuji to Shizuoka's coast.
+        <p class="change-demo-context" data-i18n="context">Shizuoka Prefecture planning workflow</p>
+        <h1 class="change-demo-title" id="change-demo-title" data-i18n="title">Canopy Change Explorer</h1>
+        <p class="change-demo-subtitle" data-i18n="subtitle">
+          Explore an illustrative two-epoch canopy assessment in the Abe River foothills, then follow its regional planning context.
         </p>
+        <div class="change-demo-language">
+          <label for="language-select" data-i18n="languageLabel">Language</label>
+          <select class="change-demo-select" id="language-select">
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+          </select>
+        </div>
       </header>
+
+      <section class="change-demo-section" aria-labelledby="tour-heading">
+        <h2 class="change-demo-heading" id="tour-heading" data-i18n="tourHeading">Guided mountain-to-coast tour</h2>
+        <p class="change-demo-help" data-i18n="tourHelp">Follow seven stops linking the canopy cells to Shizuoka Prefecture's terrain, city, and watershed context.</p>
+        <button class="change-demo-button change-demo-button--primary change-demo-tour-launch" id="autotour-btn" type="button" data-i18n="tourStart">Start autoplay tour</button>
+        <div class="change-demo-tour-card" id="autotour-card" role="dialog" aria-labelledby="autotour-title" aria-describedby="autotour-subtitle" hidden>
+          <h3 class="change-demo-tour-title" id="autotour-title" data-i18n="tourDialogTitle">Guided tour</h3>
+          <p class="change-demo-tour-subtitle" id="autotour-subtitle" data-i18n="tourPreparing">Preparing the first stop…</p>
+          <div class="change-demo-progress" id="autotour-progress" role="progressbar" aria-label="Time remaining in this tour stop" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+            <div class="change-demo-progress-bar" id="autotour-progress-bar"></div>
+          </div>
+          <div class="change-demo-tour-nav">
+            <button class="change-demo-button" id="autotour-previous" type="button" data-i18n="tourPrevious">← Previous</button>
+            <button class="change-demo-button" id="autotour-next" type="button" data-i18n="tourNext">Next →</button>
+          </div>
+          <div class="change-demo-tour-actions">
+            <button class="change-demo-button" id="autotour-pause" type="button" data-i18n="tourPause">Pause</button>
+            <button class="change-demo-button" id="autotour-resume" type="button" data-i18n="tourResume" hidden>Resume</button>
+            <button class="change-demo-button" id="autotour-restart" type="button" data-i18n="tourRestart">Restart</button>
+            <button class="change-demo-button" id="autotour-close" type="button" data-i18n="tourClose">Close</button>
+          </div>
+        </div>
+      </section>
 
       <section class="change-demo-section" aria-labelledby="mode-heading">
         <fieldset class="change-demo-fieldset">
-          <legend class="change-demo-heading" id="mode-heading">Analysis mode</legend>
+          <legend class="change-demo-heading" id="mode-heading" data-i18n="modeHeading">Analysis mode</legend>
           <div class="change-demo-button-grid">
-            <button class="change-demo-button" type="button" data-mode-button data-mode="year1" aria-pressed="true">2020 baseline</button>
-            <button class="change-demo-button" type="button" data-mode-button data-mode="year5" aria-pressed="false">2025 scenario</button>
-            <button class="change-demo-button" type="button" data-mode-button data-mode="change" aria-pressed="false">Height change</button>
-            <button class="change-demo-button" type="button" data-mode-button data-mode="carbon" aria-pressed="false">Carbon estimate</button>
+            <button class="change-demo-button" type="button" data-mode-button data-mode="year1" data-i18n="modeYear1" aria-pressed="true">2020 baseline</button>
+            <button class="change-demo-button" type="button" data-mode-button data-mode="year5" data-i18n="modeYear5" aria-pressed="false">2025 scenario</button>
+            <button class="change-demo-button" type="button" data-mode-button data-mode="change" data-i18n="modeChange" aria-pressed="false">Height change</button>
+            <button class="change-demo-button" type="button" data-mode-button data-mode="carbon" data-i18n="modeCarbon" aria-pressed="false">Carbon estimate</button>
           </div>
         </fieldset>
         <div class="change-demo-button-row" style="margin-top: 8px">
-          <button class="change-demo-button change-demo-button--primary" id="animate-btn" type="button">Animate 2020 to 2025</button>
-          <button class="change-demo-button" id="reset-btn" type="button">Reset demo</button>
+          <button class="change-demo-button change-demo-button--primary" id="animate-btn" type="button" data-i18n="animate">Animate 2020 to 2025</button>
+          <button class="change-demo-button" id="reset-btn" type="button" data-i18n="reset">Reset demo</button>
         </div>
         <output class="change-demo-status" id="app-status" aria-live="polite">Loading the 3D scene…</output>
       </section>
 
       <section class="change-demo-section" aria-labelledby="kpi-heading">
-        <h2 class="change-demo-heading" id="kpi-heading">Illustrative indicators</h2>
+        <h2 class="change-demo-heading" id="kpi-heading" data-i18n="kpiHeading">Illustrative indicators</h2>
         <dl class="change-demo-kpis">
-          <div class="change-demo-kpi change-demo-kpi--wide"><dt>View</dt><dd id="kpi-timestamp">2020 Baseline</dd></div>
-          <div class="change-demo-kpi"><dt>Grid cells</dt><dd id="kpi-total">0</dd></div>
-          <div class="change-demo-kpi"><dt>Significant loss</dt><dd id="kpi-loss">0</dd></div>
-          <div class="change-demo-kpi"><dt>Significant growth</dt><dd id="kpi-growth">0</dd></div>
-          <div class="change-demo-kpi"><dt>Mean height delta</dt><dd id="kpi-delta">0 m</dd></div>
-          <div class="change-demo-kpi change-demo-kpi--wide"><dt>Modeled carbon delta</dt><dd id="kpi-carbon">0 Mg CO₂e</dd></div>
+          <div class="change-demo-kpi change-demo-kpi--wide"><dt data-i18n="kpiView">View</dt><dd id="kpi-timestamp">2020 Baseline</dd></div>
+          <div class="change-demo-kpi"><dt data-i18n="kpiCells">Grid cells</dt><dd id="kpi-total">0</dd></div>
+          <div class="change-demo-kpi"><dt data-i18n="kpiLoss">Significant loss</dt><dd id="kpi-loss">0</dd></div>
+          <div class="change-demo-kpi"><dt data-i18n="kpiGrowth">Significant growth</dt><dd id="kpi-growth">0</dd></div>
+          <div class="change-demo-kpi"><dt data-i18n="kpiMeanDelta">Mean height delta</dt><dd id="kpi-delta">0 m</dd></div>
+          <div class="change-demo-kpi change-demo-kpi--wide"><dt data-i18n="kpiCarbon">Modeled carbon delta</dt><dd id="kpi-carbon">0 Mg CO₂e</dd></div>
         </dl>
-        <p class="change-demo-warning">
-          Synthetic 12 × 10 canopy grid. Height change and carbon outputs are illustrative,
-          not measured observations or decision-grade estimates.
-        </p>
+        <p class="change-demo-warning" data-i18n="warning">Each 100 × 100 m cell is an illustrative spatial aggregation of canopy height over its footprint. Height change and carbon outputs are synthetic, not measured observations or decision-grade estimates.</p>
+      </section>
+
+      <section class="change-demo-section" aria-labelledby="selection-heading">
+        <h2 class="change-demo-heading" id="selection-heading" data-i18n="selectionHeading">Selected canopy cell</h2>
+        <p class="change-demo-selection-empty" id="selection-empty" data-i18n="selectionEmpty">Select a cell on the map to inspect its illustrative values.</p>
+        <dl class="change-demo-selection" id="selection-details" hidden>
+          <div class="change-demo-selection-row"><dt data-i18n="selectionCell">Cell</dt><dd id="selection-cell"></dd></div>
+          <div class="change-demo-selection-row"><dt data-i18n="selectionCenter">Center</dt><dd id="selection-center"></dd></div>
+          <div class="change-demo-selection-row"><dt data-i18n="selectionYear1">2020 height</dt><dd id="selection-year1"></dd></div>
+          <div class="change-demo-selection-row"><dt data-i18n="selectionYear5">2025 height</dt><dd id="selection-year5"></dd></div>
+          <div class="change-demo-selection-row"><dt data-i18n="selectionChange">Delta classification</dt><dd id="selection-change"></dd></div>
+          <div class="change-demo-selection-row"><dt data-i18n="selectionCarbon">Modeled carbon delta</dt><dd id="selection-carbon"></dd></div>
+          <div class="change-demo-selection-row"><dt data-i18n="selectionMode">Current mode value</dt><dd id="selection-mode"></dd></div>
+        </dl>
+        <button class="change-demo-button change-demo-clear" id="selection-clear" type="button" data-i18n="selectionClear" hidden>Clear selection</button>
       </section>
 
       <section class="change-demo-section" aria-labelledby="camera-heading">
-        <h2 class="change-demo-heading" id="camera-heading">Camera</h2>
+        <h2 class="change-demo-heading" id="camera-heading" data-i18n="cameraHeading">Camera</h2>
         <div class="change-demo-button-row">
-          <button class="change-demo-button" id="camera-overview" type="button">Regional overview</button>
-          <button class="change-demo-button" id="camera-foothills" type="button">Foothills</button>
-          <button class="change-demo-button" id="camera-city" type="button">Shizuoka city</button>
-        </div>
-      </section>
-
-      <section class="change-demo-section" aria-labelledby="tour-heading">
-        <h2 class="change-demo-heading" id="tour-heading">Guided mountain-to-coast tour</h2>
-        <button class="change-demo-button change-demo-button--primary" id="autotour-btn" type="button">Start autoplay tour</button>
-        <div class="change-demo-tour-card" id="autotour-card" hidden>
-          <h3 class="change-demo-tour-title" id="autotour-title">Autoplay tour</h3>
-          <p class="change-demo-tour-subtitle" id="autotour-subtitle">Preparing the first stop…</p>
-          <div class="change-demo-button-row">
-            <button class="change-demo-button" id="autotour-pause" type="button">Pause</button>
-            <button class="change-demo-button" id="autotour-resume" type="button" hidden>Resume</button>
-            <button class="change-demo-button" id="autotour-restart" type="button">Restart</button>
-            <button class="change-demo-button" id="autotour-close" type="button">Close</button>
-          </div>
+          <button class="change-demo-button" id="camera-initial" type="button" data-i18n="cameraInitial">Canopy close-up</button>
+          <button class="change-demo-button" id="camera-overview" type="button" data-i18n="cameraOverview">Regional overview</button>
+          <button class="change-demo-button" id="camera-foothills" type="button" data-i18n="cameraFoothills">Foothills</button>
+          <button class="change-demo-button" id="camera-city" type="button" data-i18n="cameraCity">Shizuoka city</button>
         </div>
       </section>
 
       <section class="change-demo-section" aria-labelledby="legend-heading">
-        <h2 class="change-demo-legend-title" id="legend-heading">Height-change legend</h2>
-        <ul class="change-demo-legend" role="list">
-          <li><span class="change-demo-swatch" style="background:#ff4444"></span>Loss</li>
-          <li><span class="change-demo-swatch" style="background:#8b8b8b"></span>Stable</li>
-          <li><span class="change-demo-swatch" style="background:#228b22"></span>Growth</li>
-        </ul>
+        <h2 class="change-demo-legend-title" id="legend-heading">2020 canopy-height legend</h2>
+        <ul class="change-demo-legend" id="legend-list" role="list"></ul>
       </section>
 
       <section class="change-demo-section">
         <details class="change-demo-details">
-          <summary>Data provenance and limitations</summary>
+          <summary data-i18n="sourceSummary">Data provenance and limitations</summary>
           <ul class="change-demo-source-list">
-            <li>Terrain: Cesium ion asset 2767062, Japan regional terrain.</li>
-            <li>Buildings: Cesium ion asset 2602291, Japan Buildings 3D Tiles.</li>
+            <li data-i18n="sourceTerrain">Terrain: Cesium ion asset 2767062, Japan regional terrain.</li>
+            <li data-i18n="sourceBuildings">Buildings: Cesium ion asset 2602291, Japan Buildings 3D Tiles.</li>
             <li>
-              Source candidate:
-              <a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2019-pointcloud" target="_blank" rel="noopener noreferrer">Shizuoka 2019 point cloud</a>.
+              <span data-i18n="sourceCandidate">Public source candidate:</span>
+              <a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2019-pointcloud" target="_blank" rel="noopener noreferrer" data-i18n="source2019">Shizuoka 2019 point cloud</a>.
             </li>
             <li>
-              Source candidate:
-              <a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2021-pointcloud" target="_blank" rel="noopener noreferrer">Shizuoka 2021 point cloud</a>.
+              <span data-i18n="sourceCandidate">Public source candidate:</span>
+              <a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2021-pointcloud" target="_blank" rel="noopener noreferrer" data-i18n="source2021">Shizuoka 2021 point cloud</a>.
             </li>
-            <li>Publisher: Shizuoka Prefecture via GEOSPATIAL.JP / VIRTUAL SHIZUOKA.</li>
-            <li>Catalog terms: dual licensed CC BY 4.0 / ODbL.</li>
-            <li>Both catalogs use JGD2011 / Japan Plane Rectangular CS VIII. Their catalog extents overlap, but usable epoch overlap remains a candidate requiring tile-level validation.</li>
-            <li>The public LAS archives are not loaded here. Production use requires validated overlapping tiles converted to streamable 3D Tiles and uploaded as two ion assets.</li>
+            <li data-i18n="sourcePublisher">Publisher: Shizuoka Prefecture via GEOSPATIAL.JP / VIRTUAL SHIZUOKA.</li>
+            <li data-i18n="sourceLicense">Catalog terms: dual licensed CC BY 4.0 / ODbL.</li>
+            <li data-i18n="sourceOverlap">Both catalogs use JGD2011 / Japan Plane Rectangular CS VIII. Their catalog extents overlap, but usable epoch overlap still requires tile-level validation.</li>
+            <li data-i18n="sourceProduction">The public LAS archives are not loaded here. Production use requires validated overlapping tiles converted to streamable 3D Tiles and uploaded as separate epoch assets.</li>
           </ul>
         </details>
       </section>
@@ -495,7 +897,7 @@ function updateStatus(message, isError = false) {
 }
 
 const STATE = {
-  mode: "year1", // 'year1', 'year5', 'change', 'carbon'
+  mode: "year1",
   isAnimating: false,
   animationProgress: 0,
   animationFrame: null,
@@ -503,10 +905,11 @@ const STATE = {
   autotourPaused: false,
   autotourStep: 0,
   autotourRunId: 0,
-  hoveredCell: null,
   prefersReducedMotion: false,
-  primitive: null,
   cells: [],
+  cellEntities: [],
+  cellByEntityId: new Map(),
+  selectedCell: null,
 };
 
 const CONFIG = {
@@ -516,90 +919,130 @@ const CONFIG = {
   gridRows: 10,
   cellSpacingM: 100,
   heightScale: 1,
-  // Autoplay tour: Geographic story Mt. Fuji → Foothills → City → Coast
-  tourWaypoints: [
-    {
-      name: "Mt. Fuji Overview",
-      subtitle: "Shizuoka's highest elevation (3,776m)",
-      lon: 138.7274,
-      lat: 35.3606,
-      targetHeight: 3776,
-      range: 18000,
-      heading: 210,
-      pitch: -25,
-      duration: 3,
-      mode: "year1",
+  cameraPresets: {
+    initial: {
+      x: 138.42,
+      y: 35.06,
+      targetHeight: "grid",
+      range: 1850,
+      heading: 38,
+      pitch: -31,
     },
-    {
-      name: "Abe River Foothills (2020)",
-      subtitle: "Baseline forest canopy digital twin zone",
-      lon: 138.42,
-      lat: 35.06,
+    overview: {
+      x: 138.42,
+      y: 35.06,
+      targetHeight: "grid",
+      range: 30000,
+      heading: 180,
+      pitch: -35,
+    },
+    foothills: {
+      x: 138.42,
+      y: 35.06,
       targetHeight: "grid",
       range: 2600,
       heading: 45,
       pitch: -28,
-      duration: 4,
-      mode: "year1",
     },
-    {
-      name: "Foothills Change (2025)",
-      subtitle: "5-year forest growth and loss patterns",
-      lon: 138.42,
-      lat: 35.06,
-      targetHeight: "grid",
-      range: 2400,
-      heading: 115,
-      pitch: -26,
-      duration: 4,
-      mode: "year5",
-    },
-    {
-      name: "Change Detection",
-      subtitle: "Red=Loss | Green=Growth | Gray=Stable",
-      lon: 138.42,
-      lat: 35.06,
-      targetHeight: "grid",
-      range: 2200,
-      heading: 135,
-      pitch: -24,
-      duration: 4,
-      mode: "change",
-    },
-    {
-      name: "Carbon Impact",
-      subtitle: "Sequestration estimate (simplified model)",
-      lon: 138.42,
-      lat: 35.06,
-      targetHeight: "grid",
-      range: 2800,
-      heading: 225,
-      pitch: -26,
-      duration: 4,
-      mode: "carbon",
-    },
-    {
-      name: "Shizuoka City",
-      subtitle: "Urban context (PLATEAU LOD2 buildings)",
-      lon: 138.383,
-      lat: 34.976,
+    city: {
+      x: 138.383,
+      y: 34.976,
       targetHeight: 60,
       range: 4500,
       heading: 315,
       pitch: -24,
-      duration: 3,
+    },
+  },
+  tourWaypoints: [
+    {
+      x: 138.7274,
+      y: 35.3606,
+      titleKey: "stepFujiTitle",
+      descriptionKey: "stepFujiDescription",
+      targetHeight: 3776,
+      range: 18000,
+      heading: 210,
+      pitch: -25,
+      duration: 2.5,
+      holdMs: 5200,
+      mode: "year1",
+    },
+    {
+      x: 138.42,
+      y: 35.06,
+      titleKey: "stepBaselineTitle",
+      descriptionKey: "stepBaselineDescription",
+      targetHeight: "grid",
+      range: 1850,
+      heading: 38,
+      pitch: -31,
+      duration: 2.2,
+      holdMs: 6000,
+      mode: "year1",
+    },
+    {
+      x: 138.42,
+      y: 35.06,
+      titleKey: "stepScenarioTitle",
+      descriptionKey: "stepScenarioDescription",
+      targetHeight: "grid",
+      range: 1900,
+      heading: 112,
+      pitch: -29,
+      duration: 2.2,
+      holdMs: 6000,
       mode: "year5",
     },
     {
-      name: "Coastal View",
-      subtitle: "Mountain-to-ocean watershed monitoring extent",
-      lon: 138.5,
-      lat: 34.72,
-      targetHeight: 0,
-      range: 14000,
+      x: 138.42,
+      y: 35.06,
+      titleKey: "stepChangeTitle",
+      descriptionKey: "stepChangeDescription",
+      targetHeight: "grid",
+      range: 1750,
+      heading: 138,
+      pitch: -28,
+      duration: 2,
+      holdMs: 6500,
+      mode: "change",
+    },
+    {
+      x: 138.42,
+      y: 35.06,
+      titleKey: "stepCarbonTitle",
+      descriptionKey: "stepCarbonDescription",
+      targetHeight: "grid",
+      range: 2000,
+      heading: 224,
+      pitch: -30,
+      duration: 2.2,
+      holdMs: 6500,
+      mode: "carbon",
+    },
+    {
+      x: 138.383,
+      y: 34.976,
+      titleKey: "stepCityTitle",
+      descriptionKey: "stepCityDescription",
+      targetHeight: 60,
+      range: 4500,
+      heading: 315,
+      pitch: -24,
+      duration: 2.5,
+      holdMs: 5600,
+      mode: "year5",
+    },
+    {
+      x: 138.42,
+      y: 35.06,
+      titleKey: "stepOverviewTitle",
+      descriptionKey: "stepOverviewDescription",
+      targetHeight: "grid",
+      range: 30000,
       heading: 180,
-      pitch: -18,
+      pitch: -35,
       duration: 3,
+      holdMs: 6500,
       mode: "year1",
     },
   ],
@@ -669,43 +1112,62 @@ function generateSyntheticGrid() {
 // COLOR FUNCTIONS (Mode-dependent)
 // ============================================================================
 
-function getColorForCell(cell, mode) {
-  const alpha = 1.0;
+function clamp01(value) {
+  return Math.max(0, Math.min(1, value));
+}
 
-  if (mode === "year1") {
-    // Green gradient: 20m (light) → 45m (dark)
-    const normalized = (cell.year1Height - 20) / 25;
-    const n = Math.max(0, Math.min(1, normalized));
-    const r = Math.round(144 * (1 - n * 0.5));
-    const g = Math.round(238 - 100 * n);
-    const b = Math.round(144 * (1 - n * 0.7));
-    return Cesium.Color.fromBytes(r, g, b, 255 * alpha);
-  } else if (mode === "year5") {
-    // Green gradient for year 2 heights
-    const normalized = (cell.year2Height - 20) / 25;
-    const n = Math.max(0, Math.min(1, normalized));
-    const r = Math.round(144 * (1 - n * 0.5));
-    const g = Math.round(238 - 100 * n);
-    const b = Math.round(144 * (1 - n * 0.7));
-    return Cesium.Color.fromBytes(r, g, b, 255 * alpha);
-  } else if (mode === "change") {
-    // Color by delta: red (loss) → green (growth)
-    const delta = cell.delta;
-    if (delta < -3) return Cesium.Color.fromCssColorString("#ff4444"); // Significant loss
-    if (delta < -0.5) return Cesium.Color.fromCssColorString("#ff9944"); // Minor loss
-    if (delta < 0.5) return Cesium.Color.fromCssColorString("#888888"); // No change
-    if (delta < 3) return Cesium.Color.fromCssColorString("#88cc44"); // Minor growth
-    return Cesium.Color.fromCssColorString("#228b22"); // Significant growth
-  } else if (mode === "carbon") {
-    // Color by carbon delta
-    const c = cell.carbonDelta;
-    if (c < -0.5) return Cesium.Color.fromCssColorString("#ff4444");
-    if (c < 0) return Cesium.Color.fromCssColorString("#ff9944");
-    if (c < 0.5) return Cesium.Color.fromCssColorString("#888888");
-    if (c < 2) return Cesium.Color.fromCssColorString("#88cc44");
-    return Cesium.Color.fromCssColorString("#228b22");
+function interpolateColor(startCss, endCss, amount) {
+  return Cesium.Color.lerp(
+    Cesium.Color.fromCssColorString(startCss),
+    Cesium.Color.fromCssColorString(endCss),
+    clamp01(amount),
+    new Cesium.Color()
+  );
+}
+
+function getDisplayedHeight(cell) {
+  if (STATE.isAnimating) {
+    return (
+      cell.year1Height +
+      (cell.year2Height - cell.year1Height) * STATE.animationProgress
+    );
   }
-  return Cesium.Color.WHITE.withAlpha(alpha);
+  if (STATE.mode === "year1") return cell.year1Height;
+  if (STATE.mode === "year5") return cell.year2Height;
+  if (STATE.mode === "change") return Math.abs(cell.delta) * 5 + 30;
+  if (STATE.mode === "carbon") return Math.abs(cell.carbonDelta) * 10 + 30;
+  return cell.year1Height;
+}
+
+function getColorForCell(cell, mode) {
+  if (mode === "year1" || mode === "year5") {
+    const height = STATE.isAnimating
+      ? getDisplayedHeight(cell)
+      : mode === "year1"
+        ? cell.year1Height
+        : cell.year2Height;
+    return interpolateColor("#b9f58b", "#146b47", (height - 20) / 30);
+  }
+
+  if (mode === "change") {
+    if (cell.delta < -0.5) {
+      return Cesium.Color.fromCssColorString("#d94b45");
+    }
+    if (cell.delta > 0.5) {
+      return Cesium.Color.fromCssColorString("#3d9b57");
+    }
+    return Cesium.Color.fromCssColorString("#8d969c");
+  }
+
+  if (mode === "carbon") {
+    return interpolateColor(
+      "#d8eff8",
+      "#174f8a",
+      (cell.carbonDelta + 4) / 7
+    );
+  }
+
+  return Cesium.Color.WHITE;
 }
 
 // ============================================================================
@@ -715,13 +1177,13 @@ function getColorForCell(cell, mode) {
 async function initViewer() {
   // Use verified Cesium Ion assets: Japan terrain (#2767062)
   // Note: Sandcastle provides its own Cesium.Ion token; do not override
-  updateStatus("Loading Japan regional terrain…");
+  updateStatus(translate("loadingTerrain"));
   let terrainProvider;
   try {
     terrainProvider =
       await Cesium.CesiumTerrainProvider.fromIonAssetId(2767062);
   } catch (error) {
-    updateStatus(`Terrain failed to load: ${error.message}`, true);
+    updateStatus(translate("terrainError", { message: error.message }), true);
     throw error;
   }
 
@@ -740,7 +1202,7 @@ async function initViewer() {
   viewer.canvas.tabIndex = 0;
   viewer.canvas.setAttribute(
     "aria-label",
-    "Interactive 3D map of Shizuoka. Use the camera preset buttons for keyboard navigation."
+    translate("mapAria")
   );
 
   // Load verified Japan Buildings tileset (Ion asset #2602291)
@@ -768,7 +1230,7 @@ async function initViewer() {
 const viewer = await initViewer();
 
 async function sampleGridTerrainHeights() {
-  updateStatus("Placing the illustrative grid on terrain…");
+  updateStatus(translate("loadingGrid"));
   const positions = STATE.cells.map((cell) =>
     Cesium.Cartographic.fromDegrees(cell.lon, cell.lat)
   );
@@ -785,77 +1247,195 @@ async function sampleGridTerrainHeights() {
       STATE.cells[index].terrainHeight = position.height;
     });
   } catch (error) {
-    updateStatus(`Grid placement failed: ${error.message}`, true);
+    updateStatus(translate("gridError", { message: error.message }), true);
     throw error;
   }
 }
 
 // ============================================================================
-// POINT CLOUD VISUALIZATION
+// ENTITY API ANALYTICAL GRID
 // ============================================================================
 
 function visualizePointClouds() {
-  if (STATE.primitive) {
-    viewer.scene.primitives.remove(STATE.primitive);
-    STATE.primitive = null;
-  }
-
-  const instances = [];
-
-  const getHeight = (cell) => {
-    if (STATE.isAnimating) {
-      return (
-        cell.year1Height +
-        (cell.year2Height - cell.year1Height) * STATE.animationProgress
-      );
-    }
-    if (STATE.mode === "year1") return cell.year1Height;
-    if (STATE.mode === "year5") return cell.year2Height;
-    if (STATE.mode === "change") return Math.abs(cell.delta) * 5 + 30; // Scale for visibility
-    if (STATE.mode === "carbon") return Math.max(0, cell.carbonDelta) * 10 + 30;
-    return cell.year1Height;
-  };
-
   for (const cell of STATE.cells) {
-    const height = getHeight(cell);
+    const height = getDisplayedHeight(cell);
     const position = Cesium.Cartesian3.fromDegrees(
       cell.lon,
       cell.lat,
       cell.terrainHeight + height / 2
     );
-    const matrix = Cesium.Transforms.headingPitchRollToFixedFrame(
-      position,
-      new Cesium.HeadingPitchRoll(0, 0, 0)
+    const dimensions = new Cesium.Cartesian3(
+      CONFIG.cellSpacingM - 4,
+      CONFIG.cellSpacingM - 4,
+      height
     );
+    const color = getColorForCell(cell, STATE.mode);
+    let entity = STATE.cellEntities[cell.id];
 
-    const geometry = Cesium.BoxGeometry.fromDimensions({
-      dimensions: new Cesium.Cartesian3(100, 100, height),
-    });
+    if (!entity) {
+      const entityId = `canopy-cell-${cell.row + 1}-${cell.col + 1}`;
+      entity = viewer.entities.add({
+        id: entityId,
+        name: entityId,
+        position,
+        box: {
+          dimensions,
+          material: color,
+          outline: false,
+          outlineColor: Cesium.Color.WHITE,
+        },
+      });
+      STATE.cellEntities[cell.id] = entity;
+      STATE.cellByEntityId.set(entityId, cell);
+    } else {
+      entity.position = position;
+      entity.box.dimensions = dimensions;
+      entity.box.material = color;
+    }
 
-    const instance = new Cesium.GeometryInstance({
-      geometry,
-      modelMatrix: matrix,
-      attributes: {
-        color: Cesium.ColorGeometryInstanceAttribute.fromColor(
-          getColorForCell(cell, STATE.mode)
-        ),
-      },
-    });
-    instances.push(instance);
+    const selected = STATE.selectedCell?.id === cell.id;
+    entity.box.outline = selected;
+    entity.box.outlineColor = selected
+      ? Cesium.Color.WHITE
+      : Cesium.Color.TRANSPARENT;
   }
+}
 
-  if (instances.length > 0) {
-    STATE.primitive = viewer.scene.primitives.add(
-      new Cesium.Primitive({
-        geometryInstances: instances,
-        appearance: new Cesium.PerInstanceColorAppearance({
-          flat: false,
-          translucent: false,
-        }),
-        asynchronous: false,
-      })
-    );
+function formatNumber(value, options = {}) {
+  return new Intl.NumberFormat(currentLanguage === "ja" ? "ja-JP" : "en-US", {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 1,
+    ...options,
+  }).format(value);
+}
+
+function signedNumber(value) {
+  return `${value > 0 ? "+" : ""}${formatNumber(value)}`;
+}
+
+function getClassificationKey(cell) {
+  if (cell.delta < -0.5) return "classificationLoss";
+  if (cell.delta > 0.5) return "classificationGrowth";
+  return "classificationStable";
+}
+
+function getCurrentModeValue(cell) {
+  if (STATE.isAnimating) {
+    return `${formatNumber(getDisplayedHeight(cell))} m (${Math.round(
+      STATE.animationProgress * 100
+    )}%)`;
   }
+  if (STATE.mode === "year1") {
+    return `${formatNumber(cell.year1Height)} m`;
+  }
+  if (STATE.mode === "year5") {
+    return `${formatNumber(cell.year2Height)} m`;
+  }
+  if (STATE.mode === "change") {
+    return `${signedNumber(cell.delta)} m · ${translate(
+      getClassificationKey(cell)
+    )}`;
+  }
+  return `${signedNumber(cell.carbonDelta)} Mg CO₂e`;
+}
+
+function updateSelectedCellDetails() {
+  const cell = STATE.selectedCell;
+  requireElement("selection-empty").hidden = Boolean(cell);
+  requireElement("selection-details").hidden = !cell;
+  requireElement("selection-clear").hidden = !cell;
+
+  if (!cell) return;
+
+  requireElement("selection-cell").textContent =
+    `CELL-${String(cell.row + 1).padStart(2, "0")}-${String(
+      cell.col + 1
+    ).padStart(2, "0")} · R${cell.row + 1} / C${cell.col + 1}`;
+  requireElement("selection-center").textContent =
+    `${cell.lat.toFixed(5)}° N, ${cell.lon.toFixed(5)}° E`;
+  requireElement("selection-year1").textContent =
+    `${formatNumber(cell.year1Height)} m`;
+  requireElement("selection-year5").textContent =
+    `${formatNumber(cell.year2Height)} m`;
+  requireElement("selection-change").textContent =
+    `${signedNumber(cell.delta)} m · ${translate(getClassificationKey(cell))}`;
+  requireElement("selection-carbon").textContent =
+    `${signedNumber(cell.carbonDelta)} Mg CO₂e`;
+  requireElement("selection-mode").textContent = getCurrentModeValue(cell);
+}
+
+function renderLegend() {
+  const titleKeys = {
+    year1: "legendYear1",
+    year5: "legendYear5",
+    change: "legendChange",
+    carbon: "legendCarbon",
+  };
+  requireElement("legend-heading").textContent = translate(
+    titleKeys[STATE.mode]
+  );
+
+  const items =
+    STATE.mode === "change"
+      ? [
+          ["#d94b45", "legendLoss"],
+          ["#8d969c", "legendStable"],
+          ["#3d9b57", "legendGrowth"],
+        ]
+      : STATE.mode === "carbon"
+        ? [
+            ["#d8eff8", "legendLow"],
+            ["#6ca5cc", "legendMedium"],
+            ["#174f8a", "legendHigh"],
+          ]
+        : [
+            ["#b9f58b", "legendLow"],
+            ["#58b66c", "legendMedium"],
+            ["#146b47", "legendHigh"],
+          ];
+
+  const legend = requireElement("legend-list");
+  legend.replaceChildren(
+    ...items.map(([color, labelKey]) => {
+      const item = document.createElement("li");
+      const swatch = document.createElement("span");
+      swatch.className = "change-demo-swatch";
+      swatch.style.background = color;
+      swatch.setAttribute("aria-hidden", "true");
+      item.append(swatch, translate(labelKey));
+      return item;
+    })
+  );
+}
+
+function renderCurrentTourCopy() {
+  if (requireElement("autotour-card").hidden) return;
+  const waypoint = CONFIG.tourWaypoints[STATE.autotourStep];
+  if (!waypoint) return;
+  requireElement("autotour-title").textContent =
+    `${STATE.autotourStep + 1} / ${CONFIG.tourWaypoints.length} · ${translate(
+      waypoint.titleKey
+    )}`;
+  requireElement("autotour-subtitle").textContent = translate(
+    waypoint.descriptionKey
+  );
+}
+
+function applyTranslations() {
+  document.documentElement.lang = currentLanguage;
+  document.title = translate("documentTitle");
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = translate(element.dataset.i18n);
+  });
+  viewer.canvas.setAttribute("aria-label", translate("mapAria"));
+  requireElement("autotour-progress").setAttribute(
+    "aria-label",
+    translate("tourProgressLabel")
+  );
+  updateKPIs();
+  renderLegend();
+  updateSelectedCellDetails();
+  renderCurrentTourCopy();
 }
 
 // ============================================================================
@@ -886,8 +1466,14 @@ function switchMode(newMode, announce = true) {
 
   visualizePointClouds();
   updateKPIs();
+  renderLegend();
+  updateSelectedCellDetails();
   if (announce) {
-    updateStatus(`${requireElement("kpi-timestamp").textContent} mode selected.`);
+    updateStatus(
+      translate("selectedMode", {
+        mode: requireElement("kpi-timestamp").textContent,
+      })
+    );
   }
 }
 
@@ -907,27 +1493,27 @@ function updateKPIs() {
     stats.totalCarbon += cell.carbonDelta;
   }
 
-  const meanDelta = (stats.totalDelta / stats.total).toFixed(2);
-  const pctLoss = ((stats.sigLoss / stats.total) * 100).toFixed(1);
-  const pctGrowth = ((stats.sigGrowth / stats.total) * 100).toFixed(1);
+  const meanDelta = stats.total ? stats.totalDelta / stats.total : 0;
+  const pctLoss = stats.total ? (stats.sigLoss / stats.total) * 100 : 0;
+  const pctGrowth = stats.total ? (stats.sigGrowth / stats.total) * 100 : 0;
 
   const set = (id, val) => {
     requireElement(id).textContent = val;
   };
 
   set("kpi-total", stats.total);
-  set("kpi-loss", `${stats.sigLoss} (${pctLoss}%)`);
-  set("kpi-growth", `${stats.sigGrowth} (${pctGrowth}%)`);
-  set("kpi-delta", `${meanDelta} m`);
-  set("kpi-carbon", `${stats.totalCarbon.toFixed(1)} Mg CO₂e`);
+  set("kpi-loss", `${stats.sigLoss} (${formatNumber(pctLoss)}%)`);
+  set("kpi-growth", `${stats.sigGrowth} (${formatNumber(pctGrowth)}%)`);
+  set("kpi-delta", `${formatNumber(meanDelta)} m`);
+  set("kpi-carbon", `${formatNumber(stats.totalCarbon)} Mg CO₂e`);
 
-  const modeLabel = {
-    year1: "2020 Baseline",
-    year5: "2025 Forecast",
-    change: "2020–2025 Change",
-    carbon: "Carbon Impact",
+  const modeLabelKeys = {
+    year1: "modeLabelYear1",
+    year5: "modeLabelYear5",
+    change: "modeLabelChange",
+    carbon: "modeLabelCarbon",
   };
-  set("kpi-timestamp", modeLabel[STATE.mode]);
+  set("kpi-timestamp", translate(modeLabelKeys[STATE.mode]));
 }
 
 // ============================================================================
@@ -941,6 +1527,21 @@ function renderTourControls(showCard = STATE.autotourActive) {
     !STATE.autotourActive || STATE.autotourPaused;
   requireElement("autotour-resume").hidden =
     !STATE.autotourActive || !STATE.autotourPaused;
+  requireElement("autotour-previous").disabled = STATE.autotourStep === 0;
+  requireElement("autotour-next").disabled =
+    STATE.autotourStep === CONFIG.tourWaypoints.length - 1;
+}
+
+function setTourProgress(percentRemaining) {
+  const percent = Math.max(0, Math.min(100, Math.round(percentRemaining)));
+  requireElement("autotour-progress-bar").style.transform =
+    `scaleX(${percent / 100})`;
+  const progress = requireElement("autotour-progress");
+  progress.setAttribute("aria-valuenow", String(percent));
+  progress.setAttribute(
+    "aria-valuetext",
+    translate("progressRemaining", { percent })
+  );
 }
 
 function stopAutoplayTour({ hideCard = true, focusStart = false } = {}) {
@@ -949,10 +1550,12 @@ function stopAutoplayTour({ hideCard = true, focusStart = false } = {}) {
   STATE.autotourPaused = false;
   viewer.camera.cancelFlight();
   renderTourControls(!hideCard);
+  setTourProgress(100);
   if (hideCard) {
-    requireElement("autotour-title").textContent = "Autoplay tour";
+    requireElement("autotour-title").textContent =
+      translate("tourDialogTitle");
     requireElement("autotour-subtitle").textContent =
-      "Preparing the first stop…";
+      translate("tourPreparing");
   }
   if (focusStart) {
     requireElement("autotour-btn").focus();
@@ -967,7 +1570,7 @@ function setCameraView(waypoint, duration) {
         25
       : waypoint.targetHeight;
   const target = new Cesium.BoundingSphere(
-    Cesium.Cartesian3.fromDegrees(waypoint.lon, waypoint.lat, targetHeight),
+    Cesium.Cartesian3.fromDegrees(waypoint.x, waypoint.y, targetHeight),
     50
   );
   const offset = new Cesium.HeadingPitchRange(
@@ -994,39 +1597,54 @@ function setCameraView(waypoint, duration) {
 
 async function waitForTour(milliseconds, runId) {
   let elapsed = 0;
+  setTourProgress(100);
   while (
     elapsed < milliseconds &&
     STATE.autotourActive &&
     STATE.autotourRunId === runId
   ) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     if (!STATE.autotourPaused) {
-      elapsed += 100;
+      elapsed += 50;
+      setTourProgress(100 * (1 - elapsed / milliseconds));
     }
+  }
+  if (elapsed >= milliseconds) {
+    setTourProgress(0);
   }
 }
 
-async function autoplayTour() {
-  if (STATE.autotourActive) {
-    stopAutoplayTour({ hideCard: false });
-  }
-
-  const runId = ++STATE.autotourRunId;
-  STATE.autotourActive = true;
-  STATE.autotourPaused = STATE.prefersReducedMotion;
-  STATE.autotourStep = 0;
+function renderTourStep(index) {
+  STATE.autotourStep = index;
+  const waypoint = CONFIG.tourWaypoints[index];
+  switchMode(waypoint.mode, false);
+  renderCurrentTourCopy();
   renderTourControls(true);
+  updateStatus(
+    translate("tourStop", {
+      current: index + 1,
+      total: CONFIG.tourWaypoints.length,
+      title: translate(waypoint.titleKey),
+    })
+  );
+  return waypoint;
+}
 
-  if (STATE.prefersReducedMotion) {
-    updateStatus(
-      "Autoplay is paused because reduced motion is enabled. Select Resume for instant camera changes."
-    );
-  } else {
-    updateStatus("Autoplay tour started.");
-  }
-
-  for (let i = 0; i < CONFIG.tourWaypoints.length; i++) {
+async function runAutoplayTour(runId) {
+  for (
+    let i = STATE.autotourStep;
+    i < CONFIG.tourWaypoints.length;
+    i++
+  ) {
     if (!STATE.autotourActive || STATE.autotourRunId !== runId) {
+      return;
+    }
+
+    const waypoint = renderTourStep(i);
+    setTourProgress(100);
+
+    if (STATE.prefersReducedMotion) {
+      await setCameraView(waypoint, 0);
       return;
     }
 
@@ -1040,14 +1658,6 @@ async function autoplayTour() {
     if (!STATE.autotourActive || STATE.autotourRunId !== runId) {
       return;
     }
-
-    const waypoint = CONFIG.tourWaypoints[i];
-    STATE.autotourStep = i;
-    switchMode(waypoint.mode, false);
-    requireElement("autotour-title").textContent =
-      `${i + 1} of ${CONFIG.tourWaypoints.length}: ${waypoint.name}`;
-    requireElement("autotour-subtitle").textContent = waypoint.subtitle;
-    updateStatus(`Tour stop ${i + 1}: ${waypoint.name}.`);
 
     let flightResult = "cancel";
     while (
@@ -1063,11 +1673,11 @@ async function autoplayTour() {
       }
       flightResult = await setCameraView(
         waypoint,
-        STATE.prefersReducedMotion ? 0 : waypoint.duration
+        waypoint.duration
       );
     }
 
-    await waitForTour(STATE.prefersReducedMotion ? 500 : 1000, runId);
+    await waitForTour(waypoint.holdMs, runId);
   }
 
   if (STATE.autotourRunId !== runId) {
@@ -1075,11 +1685,34 @@ async function autoplayTour() {
   }
   STATE.autotourActive = false;
   STATE.autotourPaused = false;
-  requireElement("autotour-title").textContent = "Tour complete";
+  requireElement("autotour-title").textContent = translate("tourComplete");
   requireElement("autotour-subtitle").textContent =
-    "Restart the tour or close these controls.";
+    translate("tourCompleteDescription");
   renderTourControls(true);
-  updateStatus("Autoplay tour complete.");
+  updateStatus(translate("tourCompleteStatus"));
+}
+
+function launchTourAt(index, paused = false) {
+  viewer.camera.cancelFlight();
+  const runId = ++STATE.autotourRunId;
+  STATE.autotourActive = true;
+  STATE.autotourPaused = paused;
+  STATE.autotourStep = Math.max(
+    0,
+    Math.min(CONFIG.tourWaypoints.length - 1, index)
+  );
+  renderTourControls(true);
+  void runAutoplayTour(runId);
+}
+
+function autoplayTour() {
+  launchTourAt(0, STATE.prefersReducedMotion);
+  updateStatus(
+    translate(STATE.prefersReducedMotion ? "tourReduced" : "tourStarted")
+  );
+  requireElement(
+    STATE.prefersReducedMotion ? "autotour-resume" : "autotour-pause"
+  ).focus();
 }
 
 function pauseAutoplayTour() {
@@ -1090,7 +1723,7 @@ function pauseAutoplayTour() {
   viewer.camera.cancelFlight();
   renderTourControls(true);
   updateStatus(
-    `Autoplay paused at stop ${STATE.autotourStep + 1}. Select Resume to continue.`
+    translate("tourPaused", { current: STATE.autotourStep + 1 })
   );
   requireElement("autotour-resume").focus();
 }
@@ -1099,73 +1732,78 @@ function resumeAutoplayTour() {
   if (!STATE.autotourActive || !STATE.autotourPaused) {
     return;
   }
+  if (STATE.prefersReducedMotion) {
+    updateStatus(translate("tourManualReduced"));
+    requireElement("autotour-next").focus();
+    return;
+  }
   STATE.autotourPaused = false;
   renderTourControls(true);
-  updateStatus(`Autoplay resumed at stop ${STATE.autotourStep + 1}.`);
+  updateStatus(
+    translate("tourResumed", { current: STATE.autotourStep + 1 })
+  );
   requireElement("autotour-pause").focus();
 }
 
 function restartAutoplayTour() {
-  stopAutoplayTour({ hideCard: false });
-  STATE.autotourStep = 0;
-  void autoplayTour();
+  launchTourAt(0, STATE.prefersReducedMotion);
+}
+
+function moveTourStep(delta) {
+  const nextStep = Math.max(
+    0,
+    Math.min(
+      CONFIG.tourWaypoints.length - 1,
+      STATE.autotourStep + delta
+    )
+  );
+  launchTourAt(nextStep, STATE.prefersReducedMotion || STATE.autotourPaused);
 }
 
 // ============================================================================
 // CAMERA PRESETS
 // ============================================================================
 
-function useCameraPreset(waypoint, label, immediate = false) {
+function useCameraPreset(waypoint, labelKey, immediate = false) {
   if (STATE.autotourActive) {
     stopAutoplayTour();
   }
-  updateStatus(`${label} camera selected.`);
+  updateStatus(
+    translate("cameraSelected", { camera: translate(labelKey) })
+  );
   return setCameraView(
     waypoint,
     immediate || STATE.prefersReducedMotion ? 0 : 2
   );
 }
 
+function cameraInitial(immediate = false) {
+  return useCameraPreset(
+    CONFIG.cameraPresets.initial,
+    "cameraInitial",
+    immediate
+  );
+}
+
 function cameraOverview(immediate = false) {
   return useCameraPreset(
-    {
-      lon: 138.42,
-      lat: 35.06,
-      targetHeight: "grid",
-      range: 30000,
-      heading: 180,
-      pitch: -35,
-    },
-    "Regional overview",
+    CONFIG.cameraPresets.overview,
+    "cameraOverview",
     immediate
   );
 }
 
 function cameraFoothills() {
   return useCameraPreset(
-    {
-      lon: 138.42,
-      lat: 35.06,
-      targetHeight: "grid",
-      range: 2600,
-      heading: 45,
-      pitch: -28,
-    },
-    "Foothills"
+    CONFIG.cameraPresets.foothills,
+    "cameraFoothills"
   );
 }
 
 function cameraCity() {
   return useCameraPreset(
-    {
-      lon: 138.383,
-      lat: 34.976,
-      targetHeight: 60,
-      range: 4500,
-      heading: 315,
-      pitch: -24,
-    },
-    "Shizuoka city"
+    CONFIG.cameraPresets.city,
+    "cameraCity"
   );
 }
 
@@ -1194,12 +1832,14 @@ function animateEpochChange() {
     STATE.isAnimating = false;
     visualizePointClouds();
     updateKPIs();
+    renderLegend();
+    updateSelectedCellDetails();
     requireElement("animate-btn").disabled = false;
-    updateStatus("2025 scenario shown without animation due to reduced motion.");
+    updateStatus(translate("animationReduced"));
     return;
   }
 
-  updateStatus("Animating the illustrative canopy from 2020 to 2025.");
+  updateStatus(translate("animationRunning"));
   const start = performance.now();
   let lastRender = 0;
   const step = (now) => {
@@ -1212,6 +1852,7 @@ function animateEpochChange() {
     STATE.animationProgress = Math.min(1, (now - start) / 1800);
     if (now - lastRender >= 33 || STATE.animationProgress === 1) {
       visualizePointClouds();
+      updateSelectedCellDetails();
       lastRender = now;
     }
 
@@ -1220,7 +1861,8 @@ function animateEpochChange() {
       STATE.animationFrame = null;
       requireElement("animate-btn").disabled = false;
       updateKPIs();
-      updateStatus("Animation complete. 2025 scenario shown.");
+      renderLegend();
+      updateStatus(translate("animationComplete"));
       return;
     }
     STATE.animationFrame = requestAnimationFrame(step);
@@ -1235,15 +1877,51 @@ STATE.prefersReducedMotion = window.matchMedia(
 await sampleGridTerrainHeights();
 visualizePointClouds();
 updateKPIs();
-await cameraOverview(true);
-updateStatus(
-  "Ready. Synthetic change outputs are illustrative; source epochs remain candidates."
-);
+renderLegend();
+applyTranslations();
+await cameraInitial(true);
+updateStatus(translate("ready"));
+
+const sceneHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+sceneHandler.setInputAction((movement) => {
+  const picked = viewer.scene.pick(movement.position);
+  const pickedEntity = Cesium.defined(picked) ? picked.id : undefined;
+  const entityId =
+    typeof pickedEntity === "string" ? pickedEntity : pickedEntity?.id;
+  const cell = entityId ? STATE.cellByEntityId.get(entityId) : undefined;
+  if (!cell) return;
+
+  STATE.selectedCell = cell;
+  visualizePointClouds();
+  updateSelectedCellDetails();
+  updateStatus(
+    translate("selectedCell", {
+      cell: `CELL-${String(cell.row + 1).padStart(2, "0")}-${String(
+        cell.col + 1
+      ).padStart(2, "0")}`,
+    })
+  );
+}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
 document.querySelectorAll("[data-mode-button]").forEach((button) => {
   button.addEventListener("click", () => switchMode(button.dataset.mode));
 });
 requireElement("animate-btn").addEventListener("click", animateEpochChange);
+requireElement("language-select").addEventListener("change", (event) => {
+  currentLanguage = event.target.value === "ja" ? "ja" : "en";
+  applyTranslations();
+  updateStatus(translate("ready"));
+});
+requireElement("selection-clear").addEventListener("click", () => {
+  STATE.selectedCell = null;
+  visualizePointClouds();
+  updateSelectedCellDetails();
+  updateStatus(translate("clearedSelection"));
+  viewer.canvas.focus();
+});
+requireElement("camera-initial").addEventListener("click", () => {
+  void cameraInitial();
+});
 requireElement("camera-overview").addEventListener("click", () => {
   void cameraOverview();
 });
@@ -1258,13 +1936,19 @@ requireElement("autotour-btn").addEventListener("click", () => {
 });
 requireElement("autotour-pause").addEventListener("click", pauseAutoplayTour);
 requireElement("autotour-resume").addEventListener("click", resumeAutoplayTour);
+requireElement("autotour-previous").addEventListener("click", () => {
+  moveTourStep(-1);
+});
+requireElement("autotour-next").addEventListener("click", () => {
+  moveTourStep(1);
+});
 requireElement("autotour-restart").addEventListener(
   "click",
   restartAutoplayTour
 );
 requireElement("autotour-close").addEventListener("click", () => {
   stopAutoplayTour({ focusStart: true });
-  updateStatus("Autoplay tour closed.");
+  updateStatus(translate("tourClosed"));
 });
 requireElement("reset-btn").addEventListener("click", () => {
   STATE.isAnimating = false;
@@ -1274,9 +1958,11 @@ requireElement("reset-btn").addEventListener("click", () => {
     STATE.animationFrame = null;
   }
   stopAutoplayTour();
+  STATE.selectedCell = null;
   switchMode("year1", false);
-  void cameraOverview();
-  updateStatus("Demo reset to the 2020 baseline and regional overview.");
+  updateSelectedCellDetails();
+  void cameraInitial();
+  updateStatus(translate("resetComplete"));
 });
 
 console.info(
