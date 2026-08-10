@@ -1,0 +1,5 @@
+[-1139424ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://sandcastle.cesium.com/templates/bucket.html:0
+[    6628ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ https://sandcastle.cesium.com/templates/bucket.html:0
+[   11518ms] [INFO] Japan Buildings (ion asset 2602291) loaded. @ :1221
+[   11962ms] [INFO] Demo 5 ready with 120 deterministic illustrative grid cells. @ :1967
+[   11962ms] [INFO] Virtual Shizuoka candidate epochs: shizuoka-2019-pointcloud and shizuoka-2021-pointcloud; catalog terms CC BY 4.0 / ODbL. @ :1970

@@ -1,0 +1,46 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e3]:
+    - banner [ref=f3e4]:
+      - link:
+        - /url: https://sandcastle.cesium.com/
+      - button "New Sandcastle" [ref=f3e5] [cursor=pointer]
+      - button "Share" [ref=f3e6] [cursor=pointer]
+      - separator [ref=f3e9]
+      - button "Standalone" [ref=f3e10] [cursor=pointer]
+      - button "Feedback & Issues" [ref=f3e13] [cursor=pointer]
+      - generic [ref=f3e14]: Cesium 1.144.0
+    - generic [ref=f3e16]:
+      - button "Gallery" [ref=f3e17] [cursor=pointer]
+      - button "Editor" [ref=f3e20] [cursor=pointer]
+      - separator [ref=f3e23]
+      - button "New Sandcastle" [ref=f3e24] [cursor=pointer]
+      - button "Documentation" [ref=f3e27] [cursor=pointer]
+      - button "Cesium Copilot" [ref=f3e30] [cursor=pointer]
+      - separator [ref=f3e34]
+      - button "Toggle theme" [ref=f3e35] [cursor=pointer]
+      - button "Settings" [ref=f3e38] [cursor=pointer]
+    - generic [ref=f3e43]:
+      - generic [ref=f3e45]:
+        - generic [ref=f3e46]:
+          - tablist [ref=f3e47]:
+            - tab "Javascript" [selected] [ref=f3e48] [cursor=pointer]
+            - tab "HTML/CSS" [ref=f3e49] [cursor=pointer]
+          - generic [ref=f3e50]:
+            - button [ref=f3e51] [cursor=pointer]
+            - button "Insert" [ref=f3e54] [cursor=pointer]
+            - button "Run F8" [ref=f3e57] [cursor=pointer]:
+              - text: Run
+              - generic [ref=f3e60]: F8
+        - code [ref=f3e64]:
+          - generic [ref=f3e65]:
+            - generic [ref=f3e66]: "1"
+            - generic [ref=f3e71]: // Loading...
+            - textbox "Editor content" [ref=f3e79]
+      - generic [ref=f3e83]:
+        - generic [ref=f3e84]: Loading...
+        - generic [ref=f3e88]:
+          - generic [ref=f3e89] [cursor=pointer]: Console
+          - generic: Any console messages will be mirrored here
+  - generic [ref=f3e96]:
+    - alert
+    - alert
