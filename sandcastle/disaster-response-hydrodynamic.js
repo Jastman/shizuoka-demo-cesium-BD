@@ -231,16 +231,20 @@
     .legend-box { width: 14px; height: 10px; border-radius: 2px; flex-shrink: 0; opacity: .7; }
     /* Water level gauge bar */
     .gauge-wrap { margin: 10px 0 4px; }
-    .gauge-track { position: relative; height: 26px; border-radius: 8px;
-      background: rgba(255,255,255,.08); border: 1px solid var(--line); overflow: hidden; }
+    .gauge-track { position: relative; height: 40px; border-radius: 8px;
+      background: rgba(255,255,255,.08); border: 2px solid var(--line); overflow: hidden; }
     .gauge-fill { position: absolute; inset: 0 auto 0 0; height: 100%;
       background: linear-gradient(90deg, #4575b4, #74add1, #fdae61, #f46d43, #a50026);
       background-size: 500% 100%; background-position: 0% 50%;
-      transition: width 0.4s ease, background-position 0.4s ease;
+      transition: width 0.6s ease, background-position 0.6s ease;
       border-radius: 0; }
+    .gauge-level-text { position: absolute; inset: 0; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,.8); pointer-events: none; }
     .gauge-ticks { position: absolute; inset: 0; display: flex;
-      justify-content: space-between; align-items: center;
-      padding: 0 6px; pointer-events: none; }
+      justify-content: space-between; align-items: flex-end;
+      padding: 0 6px 3px; pointer-events: none; }
     .gauge-ticks span { font-size: 9px; color: rgba(255,255,255,.45); font-weight: 600; }
     .gauge-label { display: block; margin-top: 4px; font-size: 10px;
       color: var(--muted); letter-spacing: .06em; }
@@ -284,8 +288,9 @@
     <div class="gauge-wrap" aria-label="Water level gauge" title="Illustrative water level (max 5 m)">
       <div class="gauge-track" id="gauge-track">
         <div class="gauge-fill" id="gauge-fill"></div>
+        <div class="gauge-level-text" id="gauge-level-text" aria-live="polite">— m</div>
         <div class="gauge-ticks">
-          <span>5 m</span><span>4 m</span><span>3 m</span><span>2 m</span><span>1 m</span><span>0</span>
+          <span>0</span><span>1 m</span><span>2 m</span><span>3 m</span><span>4 m</span><span>5 m</span>
         </div>
       </div>
       <span class="gauge-label">▲ Abe River Level (illustrative)</span>
@@ -611,15 +616,26 @@
         138.352,34.995, 138.371,34.988, 138.389,34.982, 138.397,34.967,
         138.396,34.948, 138.385,34.933, 138.371,34.945, 138.360,34.965,
       ]),
-      height: 10,
+      height: 2,
+      // Extrude height grows with water level — clearly shows inundation depth
+      extrudedHeight: new Cesium.CallbackProperty((time) => {
+        const level = modelLevel(time);
+        return 2 + level * 4; // 2m base + up to ~20m at peak
+      }, false),
       material: new Cesium.ColorMaterialProperty(
         new Cesium.CallbackProperty((time) => {
           const level = modelLevel(time);
-          return risk(level).color.withAlpha(0.16 + level * 0.03);
+          const r = risk(level);
+          // Alpha ramps dramatically: 0.08 at minimum, 0.65 at peak
+          const alpha = 0.08 + (level - 1.5) / (3.9 - 1.5) * 0.57;
+          return r.color.withAlpha(Math.max(0.08, Math.min(0.65, alpha)));
         }, false)
       ),
       outline: true,
-      outlineColor: Cesium.Color.CYAN.withAlpha(0.55),
+      outlineColor: new Cesium.CallbackProperty((time) => {
+        return risk(modelLevel(time)).color.withAlpha(0.9);
+      }, false),
+      outlineWidth: 2,
     },
   });
 
@@ -628,27 +644,33 @@
     name: "Water-level gauge (illustrative)",
     position: Cesium.Cartesian3.fromDegrees(138.365, 34.978, 40),
     cylinder: {
-      length: new Cesium.CallbackProperty((time) => 20 + modelLevel(time) * 18, false),
-      topRadius: 8,
-      bottomRadius: 8,
+      length: new Cesium.CallbackProperty((time) => 4 + modelLevel(time) * 20, false),
+      topRadius: 25,
+      bottomRadius: 25,
       heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
       material: new Cesium.ColorMaterialProperty(
         new Cesium.CallbackProperty(
-          (time) => risk(modelLevel(time)).color.withAlpha(0.88), false
+          (time) => risk(modelLevel(time)).color.withAlpha(0.85), false
         )
       ),
+      outline: true,
+      outlineColor: Cesium.Color.WHITE.withAlpha(0.4),
     },
     label: {
       text: new Cesium.CallbackProperty(
-        (time) => `Water Level Gauge\n${modelLevel(time).toFixed(2)} m (illustrative)`,
+        (time) => `⚠ Abe River\n${modelLevel(time).toFixed(2)} m\n(illustrative)`,
         false
       ),
-      font: "12px sans-serif",
+      font: "bold 13px sans-serif",
       showBackground: true,
-      backgroundColor: Cesium.Color.BLACK.withAlpha(0.78),
-      pixelOffset: new Cesium.Cartesian2(0, -52),
+      backgroundColor: Cesium.Color.BLACK.withAlpha(0.85),
+      backgroundPadding: new Cesium.Cartesian2(8, 6),
+      pixelOffset: new Cesium.Cartesian2(0, -70),
       heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
-      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 12000),
+      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 18000),
+      fillColor: new Cesium.CallbackProperty(
+        (time) => risk(modelLevel(time)).color, false
+      ),
     },
   });
 
@@ -970,6 +992,9 @@
     gaugeFill.style.width = pct + "%";
     // background-position drives the color ramp: 0% = blue (low), 100% = red (high)
     gaugeFill.style.backgroundPosition = pct + "% 50%";
+    // Show level value inside gauge bar
+    const levelTextEl = panel.querySelector("#gauge-level-text");
+    if (levelTextEl) levelTextEl.textContent = `${level.toFixed(2)} m`;
     // Update gauge track border color to match risk
     const rgbMap = {
       Monitor: "rgba(65,217,255,.5)",
