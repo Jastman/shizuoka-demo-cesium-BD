@@ -33,7 +33,7 @@
     infoBox: false,
   });
   viewer.scene.globe.enableLighting = true;
-  viewer.scene.globe.depthTestAgainstTerrain = false;
+  viewer.scene.globe.depthTestAgainstTerrain = true;
   viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#08131d");
   viewer.scene.requestRenderMode = true;
   viewer.scene.maximumRenderTimeChange = Infinity;
@@ -167,31 +167,31 @@
   const cameras = [
     {
       label: "Mountain source",
-      target: [138.3, 35.19, 1250],
-      heading: 330,
-      pitch: -24,
-      range: 30000,
+      target: [138.41, 35.38, 1400],
+      heading: 180,
+      pitch: -22,
+      range: 28000,
     },
     {
       label: "Watershed voxels",
-      target: [138.36, 35.09, 1100],
-      heading: 325,
-      pitch: -26,
-      range: 26000,
+      target: [138.41, 35.22, 500],
+      heading: 200,
+      pitch: -28,
+      range: 22000,
     },
     {
       label: "River and city",
-      target: [138.39, 34.98, 250],
-      heading: 335,
-      pitch: -24,
-      range: 18000,
+      target: [138.41, 35.06, 80],
+      heading: 190,
+      pitch: -20,
+      range: 14000,
     },
     {
       label: "Coast and bathymetry",
-      target: [138.47, 34.83, 0],
-      heading: 150,
-      pitch: -27,
-      range: 42000,
+      target: [138.47, 34.85, 0],
+      heading: 160,
+      pitch: -28,
+      range: 38000,
     },
   ];
   const tourCopy = [
@@ -305,10 +305,10 @@
     this.availableLevels = 3;
     this.maximumTileCount = 73;
     this.globalTransform = Cesium.Transforms.eastNorthUpToFixedFrame(
-      Cesium.Cartesian3.fromDegrees(138.36, 35.09, 1100)
+      Cesium.Cartesian3.fromDegrees(138.41, 35.22, 500)
     );
     this.shapeTransform = Cesium.Matrix4.fromScale(
-      new Cesium.Cartesian3(10500, 14500, 2300)
+      new Cesium.Cartesian3(9000, 16000, 1400)
     );
     this.view = options.view;
     this.aggregation = options.aggregation;
@@ -374,16 +374,17 @@
         {
           float value = fsInput.metadata.value;
           float normalized = u_view == 1 ? clamp(value / 0.35, 0.0, 1.0) : clamp(value, 0.0, 1.0);
-          vec3 low = u_view == 1 ? vec3(0.18, 0.42, 0.78) : vec3(0.10, 0.38, 0.60);
+          // Hydrological convention: dry=amber, moderate=teal, saturated=deep blue
+          vec3 low = u_view == 1 ? vec3(0.88, 0.62, 0.08) : vec3(0.95, 0.72, 0.25);
           vec3 mid = u_view == 3 ? vec3(0.98, 0.68, 0.16) : vec3(0.18, 0.72, 0.66);
-          vec3 high = u_view == 4 ? vec3(0.95, 0.30, 0.38) : vec3(0.95, 0.72, 0.25);
+          vec3 high = u_view == 4 ? vec3(0.95, 0.30, 0.38) : vec3(0.10, 0.38, 0.80);
           vec3 ramp = normalized < 0.5
             ? mix(low, mid, normalized * 2.0)
             : mix(mid, high, (normalized - 0.5) * 2.0);
           vec3 normal = fsInput.attributes.normalEC;
           float lighting = 0.58 + 0.42 * max(0.0, dot(normal, czm_lightDirectionEC));
           material.diffuse = ramp * lighting;
-          material.alpha = value >= u_threshold ? u_opacity : 0.025;
+          material.alpha = value >= u_threshold ? u_opacity : 0.0;
         }`,
     });
   }
@@ -672,7 +673,22 @@
   ui.querySelector("#vx-open-tour").addEventListener("click", () => {
     state.tourOpen = true;
     state.tourPlaying = !reducedMotion;
+    state.chapter = 0;
+    flyToChapter(0);
     story.hidden = false;
+    // Reset interval so the first chapter gets the full 9s
+    if (window.__shizuokaVoxelTourTimer) {
+      window.clearInterval(window.__shizuokaVoxelTourTimer);
+    }
+    window.__shizuokaVoxelTourTimer = window.setInterval(() => {
+      if (!state.tourPlaying || !state.tourOpen) return;
+      if (state.chapter < tourCopy.length - 1) {
+        setTourChapter(state.chapter + 1);
+      } else {
+        state.tourPlaying = false;
+        renderUi();
+      }
+    }, 9000);
     renderUi();
     story.querySelector("#vx-pause").focus();
   });
@@ -706,18 +722,11 @@
     ui.querySelector(".vx-chapters button").focus();
   });
 
+  // Tour timer is initialized when the user clicks "Open guided tour"
+  // to ensure chapter 0 always gets the full 9s window.
   if (window.__shizuokaVoxelTourTimer) {
     window.clearInterval(window.__shizuokaVoxelTourTimer);
   }
-  window.__shizuokaVoxelTourTimer = window.setInterval(() => {
-    if (!state.tourPlaying || !state.tourOpen) return;
-    if (state.chapter < tourCopy.length - 1) {
-      setTourChapter(state.chapter + 1);
-    } else {
-      state.tourPlaying = false;
-      renderUi();
-    }
-  }, 9000);
 
   try {
     const cityTileset = await Cesium.Cesium3DTileset.fromUrl(PLATEAU_AOI_LOD2, {
@@ -794,7 +803,7 @@
     );
     const localPos = Cesium.Matrix4.multiplyByPoint(invTransform, cartesian, new Cesium.Cartesian3());
     // shapeTransform maps [-1,1]^3 → ENU meters; invert to get normalized [0,1] coords
-    const halfExtents = new Cesium.Cartesian3(10500 / 2, 14500 / 2, 2300 / 2);
+    const halfExtents = new Cesium.Cartesian3(9000 / 2, 16000 / 2, 1400 / 2);
     const nx = Cesium.Math.clamp((localPos.x / halfExtents.x + 1) / 2, 0, 1);
     const ny = Cesium.Math.clamp((localPos.y / halfExtents.y + 1) / 2, 0, 1);
     const nz = Cesium.Math.clamp((localPos.z / halfExtents.z + 1) / 2, 0, 1);
@@ -808,10 +817,10 @@
     };
 
     // Convert normalized to approximate geographic coords
-    // Voxel center: 138.36°E, 35.09°N; extents ~10.5km E-W, ~14.5km N-S
-    const lon = (138.36 - 0.05) + nx * (10500 / 111320 * (1 / Math.cos(35.09 * Math.PI / 180)));
-    const lat = (35.09 - 0.065) + ny * (14500 / 111320);
-    const elev = Math.round(nz * 2300);
+    // Voxel center: 138.41°E, 35.22°N; extents ~9km E-W, ~16km N-S, ~1.4km Z
+    const lon = (138.41 - 0.0405) + nx * (9000 / 111320 * (1 / Math.cos(35.22 * Math.PI / 180)));
+    const lat = (35.22 - 0.072) + ny * (16000 / 111320);
+    const elev = Math.round(500 + (nz - 0.5) * 1400);
 
     const viewLabel = labelForView[state.view] || state.view;
     inspectPopup.innerHTML = `

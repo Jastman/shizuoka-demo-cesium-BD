@@ -786,18 +786,18 @@
         // so 300–600 m gives a "treetop" perspective with the city clearly below.
         if (!reducedMotion) {
           const waypoints = [
-            // 1. Start: wide establishing shot upstream (Akaishi foothills, looking S toward city)
-            { lon: 138.350, lat: 35.040, h: 1800, heading: 170, pitch: -18, dur: 3.5 },
-            // 2. Descend into the upper river corridor — city skyline visible ahead
-            { lon: 138.358, lat: 35.010, h: 900,  heading: 168, pitch: -12, dur: 5.0 },
-            // 3. Low sweep through central Shizuoka city — close to rooftop level
-            { lon: 138.368, lat: 34.990, h: 480,  heading: 165, pitch: -10, dur: 5.0 },
-            // 4. Over the lower floodplain — flood extent polygon and routes visible below
-            { lon: 138.378, lat: 34.967, h: 380,  heading: 170, pitch: -8,  dur: 5.0 },
-            // 5. Final approach to Suruga Bay — coast visible, pull up slightly for context
-            { lon: 138.388, lat: 34.940, h: 280,  heading: 175, pitch: -6,  dur: 5.0 },
-            // 6. Hold: wide coastal overview looking back inland at the full corridor
-            { lon: 138.392, lat: 34.915, h: 2400, heading: 350, pitch: -20, dur: 5.0 },
+            // 1. Start: Abe River upstream gorge, low altitude looking south toward city
+            { lon: 138.355, lat: 35.055, h: 420, heading: 178, pitch: -8,  dur: 3.5 },
+            // 2. Descend into central Shizuoka — city grid below, river visible left
+            { lon: 138.362, lat: 35.020, h: 280,  heading: 175, pitch: -6, dur: 5.0 },
+            // 3. Skim across the urban floodplain at rooftop level (~180m ASL)
+            { lon: 138.370, lat: 34.998, h: 180,  heading: 172, pitch: -5, dur: 5.0 },
+            // 4. Over the lower floodplain — flood extent clearly visible below
+            { lon: 138.378, lat: 34.974, h: 120,  heading: 174, pitch: -4, dur: 5.0 },
+            // 5. Coastal lowland — sea level approach, Suruga Bay ahead
+            { lon: 138.385, lat: 34.950, h: 80,   heading: 176, pitch: -4, dur: 5.0 },
+            // 6. Pull up for bay context — look back inland at the full corridor
+            { lon: 138.390, lat: 34.922, h: 2600, heading: 355, pitch: -22, dur: 5.0 },
           ];
           let idx = 0;
           function flyNext() {
