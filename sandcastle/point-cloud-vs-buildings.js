@@ -740,13 +740,13 @@
       </section>
 
       <section class="vs-section" aria-labelledby="vs-legend-title" id="vs-legend-section" style="display:none">
-        <h2 class="vs-section-title" id="vs-legend-title">${lang === "ja" ? "点群分類凡例" : "LiDAR classification"}</h2>
+        <h2 class="vs-section-title" id="vs-legend-title">${locale === "ja" ? "点群分類凡例" : "LiDAR classification"}</h2>
         <dl class="vs-legend-list">
-          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#8B6914"></span><dt>${lang === "ja" ? "地表面" : "Ground"}</dt></div>
-          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#90EE90"></span><dt>${lang === "ja" ? "低植生" : "Low vegetation"}</dt></div>
-          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#228B22"></span><dt>${lang === "ja" ? "高植生・森林" : "High vegetation / forest"}</dt></div>
-          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#FF6B35"></span><dt>${lang === "ja" ? "建築物" : "Buildings"}</dt></div>
-          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#4FC3F7"></span><dt>${lang === "ja" ? "水域（安倍川）" : "Water (Abe River)"}</dt></div>
+          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#8B6914"></span><dt>${locale === "ja" ? "地表面" : "Ground"}</dt></div>
+          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#90EE90"></span><dt>${locale === "ja" ? "低植生" : "Low vegetation"}</dt></div>
+          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#228B22"></span><dt>${locale === "ja" ? "高植生・森林" : "High vegetation / forest"}</dt></div>
+          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#FF6B35"></span><dt>${locale === "ja" ? "建築物" : "Buildings"}</dt></div>
+          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#4FC3F7"></span><dt>${locale === "ja" ? "水域（安倍川）" : "Water (Abe River)"}</dt></div>
         </dl>
       </section>
 
