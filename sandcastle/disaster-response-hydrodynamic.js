@@ -9,6 +9,8 @@
 (async function shizuokaFloodResponse() {
   "use strict";
 
+  Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5OWYyMTY3OS05ZWEzLTRlN2MtYjhkMC03YWE0MmU4ZDZhODEiLCJpZCI6MjUzMzg1LCJzdWIiOiJDZXNpdW1CRCIsImlzcyI6Imh0dHBzOi8vYXBpLmNlc2l1bS5jb20iLCJhdWQiOiJWaXJ0dWFsIFNoaXpvdWthIERlbW9zIiwiaWF0IjoxNzg2Mzk5NjcyfQ.N5gdB7U145m_8SqF0QDcE73DtbZ2FHe3TtMU500BGhA";
+
   // ── i18n ─────────────────────────────────────────────────────────────────
   const T = {
     en: {

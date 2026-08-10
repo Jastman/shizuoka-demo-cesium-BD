@@ -2,12 +2,14 @@
 (async function () {
   "use strict";
 
+  Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5OWYyMTY3OS05ZWEzLTRlN2MtYjhkMC03YWE0MmU4ZDZhODEiLCJpZCI6MjUzMzg1LCJzdWIiOiJDZXNpdW1CRCIsImlzcyI6Imh0dHBzOi8vYXBpLmNlc2l1bS5jb20iLCJhdWQiOiJWaXJ0dWFsIFNoaXpvdWthIERlbW9zIiwiaWF0IjoxNzg2Mzk5NjcyfQ.N5gdB7U145m_8SqF0QDcE73DtbZ2FHe3TtMU500BGhA";
+
   const JAPAN_TERRAIN_ASSET_ID = 2767062;
   const JAPAN_BUILDINGS_ASSET_ID = 2602291;
 
   // Replace with an ion asset tiled from one selected Virtual Shizuoka source.
   // Leave undefined rather than presenting unrelated point-cloud data as Virtual Shizuoka.
-  const VIRTUAL_SHIZUOKA_ION_ASSET_ID = undefined;
+  const VIRTUAL_SHIZUOKA_ION_ASSET_ID = 5124307;
 
   const SOURCE_SEARCH_URL =
     "https://www.geospatial.jp/ckan/dataset?q=VIRTUAL+SHIZUOKA&organization=shizuokapref&sort=metadata_modified+desc";
@@ -509,6 +511,34 @@
       margin: 0;
     }
 
+    .vs-legend-list {
+      display: grid;
+      gap: 5px;
+      margin: 0;
+    }
+
+    .vs-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 9px;
+      border-radius: 7px;
+      background: rgba(21, 33, 52, 0.62);
+      font-size: 12px;
+    }
+
+    .vs-legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .vs-legend-row dt {
+      font-weight: 600;
+      margin: 0;
+    }
+
     .vs-status-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -707,6 +737,17 @@
             ${t("detailBalanced")}
           </button>
         </div>
+      </section>
+
+      <section class="vs-section" aria-labelledby="vs-legend-title" id="vs-legend-section" style="display:none">
+        <h2 class="vs-section-title" id="vs-legend-title">${lang === "ja" ? "点群分類凡例" : "LiDAR classification"}</h2>
+        <dl class="vs-legend-list">
+          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#8B6914"></span><dt>${lang === "ja" ? "地表面" : "Ground"}</dt></div>
+          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#90EE90"></span><dt>${lang === "ja" ? "低植生" : "Low vegetation"}</dt></div>
+          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#228B22"></span><dt>${lang === "ja" ? "高植生・森林" : "High vegetation / forest"}</dt></div>
+          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#FF6B35"></span><dt>${lang === "ja" ? "建築物" : "Buildings"}</dt></div>
+          <div class="vs-legend-row"><span class="vs-legend-swatch" style="background:#4FC3F7"></span><dt>${lang === "ja" ? "水域（安倍川）" : "Water (Abe River)"}</dt></div>
+        </dl>
       </section>
 
       <section class="vs-section" aria-labelledby="vs-status-title">
@@ -1215,7 +1256,46 @@
           cullWithChildrenBounds: true,
         },
       );
-      pointCloud.style = new Cesium.Cesium3DTileStyle({ pointSize: 2 });
+      // Classification-based color styling matching LP LiDAR standard classes
+      pointCloud.style = new Cesium.Cesium3DTileStyle({
+        pointSize: 3,
+        color: {
+          conditions: [
+            ["${Classification} === 2", "color('#8B6914')"],   // ground - brown
+            ["${Classification} === 3", "color('#90EE90')"],   // low vegetation - light green
+            ["${Classification} === 5", "color('#228B22')"],   // high vegetation - forest green
+            ["${Classification} === 6", "color('#FF6B35')"],   // buildings - orange-red
+            ["${Classification} === 9", "color('#4FC3F7')"],   // water - blue
+            ["true", "color('#CCCCCC')"],                      // other - grey
+          ],
+        },
+      });
+
+      // After first tile loads, auto-correct height so points sit on terrain surface.
+      // Synthetic LAS may have small geoid offset discrepancies vs Cesium World Terrain.
+      pointCloud.allTilesLoaded.addEventListener(function onFirstLoad() {
+        pointCloud.allTilesLoaded.removeEventListener(onFirstLoad);
+        try {
+          const bs = pointCloud.boundingSphere;
+          const carto = Cesium.Cartographic.fromCartesian(bs.center);
+          // Sample terrain height at the cloud center to compute delta
+          Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, [carto])
+            .then(function (positions) {
+              const terrainH = positions[0].height || 0;
+              const cloudCenterH = carto.height;
+              // If cloud center is below terrain, lift it up
+              const delta = terrainH - cloudCenterH;
+              if (delta > 5) {
+                const surface = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, 0);
+                const lifted  = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, delta);
+                const translation = Cesium.Cartesian3.subtract(lifted, surface, new Cesium.Cartesian3());
+                pointCloud.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
+              }
+            })
+            .catch(function () { /* terrain sample failed — leave as-is */ });
+        } catch (e) { /* ignore */ }
+      });
+
       scene.primitives.add(pointCloud);
       state.pointCloud = pointCloud;
       layerButtons.forEach((button) => {
@@ -1228,6 +1308,9 @@
         "pointReady",
       );
       setDataAnswer("dataAnswerReady");
+      // Show classification legend now that LiDAR is live
+      const legendSection = shell.querySelector("#vs-legend-section");
+      if (legendSection) legendSection.style.display = "";
     } catch (error) {
       setStatus(
         pointStatus,
