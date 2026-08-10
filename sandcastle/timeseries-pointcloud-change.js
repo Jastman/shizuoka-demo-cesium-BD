@@ -1870,104 +1870,106 @@ function animateEpochChange() {
   STATE.animationFrame = requestAnimationFrame(step);
 }
 
-STATE.cells = generateSyntheticGrid();
-STATE.prefersReducedMotion = window.matchMedia(
-  "(prefers-reduced-motion: reduce)"
-).matches;
-await sampleGridTerrainHeights();
-visualizePointClouds();
-updateKPIs();
-renderLegend();
-applyTranslations();
-await cameraInitial(true);
-updateStatus(translate("ready"));
-
-const sceneHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-sceneHandler.setInputAction((movement) => {
-  const picked = viewer.scene.pick(movement.position);
-  const pickedEntity = Cesium.defined(picked) ? picked.id : undefined;
-  const entityId =
-    typeof pickedEntity === "string" ? pickedEntity : pickedEntity?.id;
-  const cell = entityId ? STATE.cellByEntityId.get(entityId) : undefined;
-  if (!cell) return;
-
-  STATE.selectedCell = cell;
+(async function initializeDemo() {
+  STATE.cells = generateSyntheticGrid();
+  STATE.prefersReducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+  await sampleGridTerrainHeights();
   visualizePointClouds();
-  updateSelectedCellDetails();
-  updateStatus(
-    translate("selectedCell", {
-      cell: `CELL-${String(cell.row + 1).padStart(2, "0")}-${String(
-        cell.col + 1
-      ).padStart(2, "0")}`,
-    })
-  );
-}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-
-document.querySelectorAll("[data-mode-button]").forEach((button) => {
-  button.addEventListener("click", () => switchMode(button.dataset.mode));
-});
-requireElement("animate-btn").addEventListener("click", animateEpochChange);
-requireElement("language-select").addEventListener("change", (event) => {
-  currentLanguage = event.target.value === "ja" ? "ja" : "en";
+  updateKPIs();
+  renderLegend();
   applyTranslations();
+  await cameraInitial(true);
   updateStatus(translate("ready"));
-});
-requireElement("selection-clear").addEventListener("click", () => {
-  STATE.selectedCell = null;
-  visualizePointClouds();
-  updateSelectedCellDetails();
-  updateStatus(translate("clearedSelection"));
-  viewer.canvas.focus();
-});
-requireElement("camera-initial").addEventListener("click", () => {
-  void cameraInitial();
-});
-requireElement("camera-overview").addEventListener("click", () => {
-  void cameraOverview();
-});
-requireElement("camera-foothills").addEventListener("click", () => {
-  void cameraFoothills();
-});
-requireElement("camera-city").addEventListener("click", () => {
-  void cameraCity();
-});
-requireElement("autotour-btn").addEventListener("click", () => {
-  void autoplayTour();
-});
-requireElement("autotour-pause").addEventListener("click", pauseAutoplayTour);
-requireElement("autotour-resume").addEventListener("click", resumeAutoplayTour);
-requireElement("autotour-previous").addEventListener("click", () => {
-  moveTourStep(-1);
-});
-requireElement("autotour-next").addEventListener("click", () => {
-  moveTourStep(1);
-});
-requireElement("autotour-restart").addEventListener(
-  "click",
-  restartAutoplayTour
-);
-requireElement("autotour-close").addEventListener("click", () => {
-  stopAutoplayTour({ focusStart: true });
-  updateStatus(translate("tourClosed"));
-});
-requireElement("reset-btn").addEventListener("click", () => {
-  STATE.isAnimating = false;
-  STATE.animationProgress = 0;
-  if (STATE.animationFrame !== null) {
-    cancelAnimationFrame(STATE.animationFrame);
-    STATE.animationFrame = null;
-  }
-  stopAutoplayTour();
-  STATE.selectedCell = null;
-  switchMode("year1", false);
-  updateSelectedCellDetails();
-  void cameraInitial();
-  updateStatus(translate("resetComplete"));
-});
 
-console.info(
-  `Demo 5 ready with ${STATE.cells.length} deterministic illustrative grid cells.`
-);
-console.info(
-  "Virtual Shizuoka candidate epochs: shizuoka-2019-pointcloud and shizuoka-2021-pointcloud; catalog terms CC BY 4.0 / ODbL."
-);
+  const sceneHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+  sceneHandler.setInputAction((movement) => {
+    const picked = viewer.scene.pick(movement.position);
+    const pickedEntity = Cesium.defined(picked) ? picked.id : undefined;
+    const entityId =
+      typeof pickedEntity === "string" ? pickedEntity : pickedEntity?.id;
+    const cell = entityId ? STATE.cellByEntityId.get(entityId) : undefined;
+    if (!cell) return;
+
+    STATE.selectedCell = cell;
+    visualizePointClouds();
+    updateSelectedCellDetails();
+    updateStatus(
+      translate("selectedCell", {
+        cell: `CELL-${String(cell.row + 1).padStart(2, "0")}-${String(
+          cell.col + 1
+        ).padStart(2, "0")}`,
+      })
+    );
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+  document.querySelectorAll("[data-mode-button]").forEach((button) => {
+    button.addEventListener("click", () => switchMode(button.dataset.mode));
+  });
+  requireElement("animate-btn").addEventListener("click", animateEpochChange);
+  requireElement("language-select").addEventListener("change", (event) => {
+    currentLanguage = event.target.value === "ja" ? "ja" : "en";
+    applyTranslations();
+    updateStatus(translate("ready"));
+  });
+  requireElement("selection-clear").addEventListener("click", () => {
+    STATE.selectedCell = null;
+    visualizePointClouds();
+    updateSelectedCellDetails();
+    updateStatus(translate("clearedSelection"));
+   viewer.canvas.focus();
+  });
+  requireElement("camera-initial").addEventListener("click", () => {
+   void cameraInitial();
+  });
+  requireElement("camera-overview").addEventListener("click", () => {
+   void cameraOverview();
+  });
+  requireElement("camera-foothills").addEventListener("click", () => {
+   void cameraFoothills();
+  });
+  requireElement("camera-city").addEventListener("click", () => {
+   void cameraCity();
+  });
+  requireElement("autotour-btn").addEventListener("click", () => {
+   void autoplayTour();
+  });
+  requireElement("autotour-pause").addEventListener("click", pauseAutoplayTour);
+  requireElement("autotour-resume").addEventListener("click", resumeAutoplayTour);
+  requireElement("autotour-previous").addEventListener("click", () => {
+   moveTourStep(-1);
+  });
+  requireElement("autotour-next").addEventListener("click", () => {
+   moveTourStep(1);
+  });
+  requireElement("autotour-restart").addEventListener(
+   "click",
+   restartAutoplayTour
+  );
+  requireElement("autotour-close").addEventListener("click", () => {
+   stopAutoplayTour({ focusStart: true });
+   updateStatus(translate("tourClosed"));
+  });
+  requireElement("reset-btn").addEventListener("click", () => {
+   STATE.isAnimating = false;
+   STATE.animationProgress = 0;
+   if (STATE.animationFrame !== null) {
+     cancelAnimationFrame(STATE.animationFrame);
+     STATE.animationFrame = null;
+   }
+   stopAutoplayTour();
+   STATE.selectedCell = null;
+   switchMode("year1", false);
+   updateSelectedCellDetails();
+   void cameraInitial();
+   updateStatus(translate("resetComplete"));
+  });
+
+  console.info(
+   `Demo 5 ready with ${STATE.cells.length} deterministic illustrative grid cells.`
+  );
+  console.info(
+   "Virtual Shizuoka candidate epochs: shizuoka-2019-pointcloud and shizuoka-2021-pointcloud; catalog terms CC BY 4.0 / ODbL."
+  );
+})();
