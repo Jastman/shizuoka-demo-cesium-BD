@@ -6,24 +6,31 @@
 // Terrain: Cesium Ion Asset #2767062 (Japan Regional Terrain, 10m resolution)
 // Buildings: Cesium Ion Asset #2602291 (Japan Buildings 3D Tiles)
 // Imagery: GSI Seamless Photo (https://cyberjapandata.gsi.go.jp, CC0 Public Domain)
-// 
+//
+// REAL PUBLIC POINT CLOUD DATASETS (Virtual Shizuoka / GEOSPATIAL.JP):
+// https://www.geospatial.jp/ckan/dataset?q=VIRTUAL+SHIZUOKA
+// - shizuoka-2019-pointcloud: Fuji southeast, Izu east region (CC BY 4.0)
+//   PBF format (LP/ALB original + ground classification), measurement dates in CSV
+// - shizuoka-2021-pointcloud: Fuji + Shizuoka east region (CC BY 4.0)
+//   PBF format, candidate geographic overlap with 2019 dataset
+// - atami-3d: 2019 LAS point clouds (300 MB+ each, CC BY 4.0)
+// CURRENT LIMITATION: Geographic overlap is candidate between 2019/2021 datasets
+//   (requires spatial validation); NOT yet tiled to Cesium 3D Tiles format for streaming
+//
 // ILLUSTRATIVE ELEMENTS (Clearly Labeled):
-// Forest Point Cloud: Synthetic 12×10 grid 2020→2025 (based on realistic patterns)
-// HEIGHT CHANGE WORKFLOW: TO BE PROVIDED BY PSS VIRTUAL SHIZUOKA
-//   - Two-epoch LiDAR point clouds (2020 baseline, 2025+ observation)
-//   - Cesium Ion hosted as 3D Tiles (.pnts format)
-//   - Height difference raster + classification maps
+// Forest Point Cloud Grid: Synthetic 12×10 grid 2020→2025 (based on realistic patterns)
+// HEIGHT CHANGE: Illustrative delta patterns until real PSS epochs are tiled
 //
 // GEOGRAPHIC NARRATIVE:
 // Mt. Fuji (3,776m) → Abe River foothills → Shizuoka city urban transition → Coast
 // Demonstrates mountain-to-ocean digital twin workflow for climate monitoring
 //
-// WORKFLOW VISION:
-// 1. PSS Virtual Shizuoka collects repeated LiDAR epochs (2020, 2025 + ongoing)
-// 2. PSS uploads to Cesium Ion as 3D Tiles (.pnts multi-epoch format)
-// 3. CesiumJS streams tiles directly (no client conversion)
-// 4. Change detection: delta height rasters, forest/urban classification, carbon sequestration
-// 5. Public Sandcastle dashboard shows live results
+// NEXT PHASE (for Jake/PSS):
+// 1. Validate geographic overlap between shizuoka-2019 & shizuoka-2021 datasets
+// 2. Convert overlapping regions to Cesium 3D Tiles (.pnts format)
+// 3. Upload to Cesium Ion as two separate assets (one per epoch)
+// 4. Update Demo 5 code with Ion asset IDs
+// 5. Demo will stream real point clouds and compute measured Δheight
 // ==============================================================================
 
 const STATE = {
@@ -229,14 +236,11 @@ function getColorForCell(cell, mode) {
 // CESIUM VIEWER SETUP (with verified Ion assets)
 // ============================================================================
 
-Cesium.Ion.defaultAccessToken =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3YTQxNWJjMC01YTgyLTQxODQtOGZiMS0zN2I1OGE3Mzk2YWUiLCJpZCI6NTc3MjgsImlhdCI6MTY0MjA0MTQwNn0.XEUJvd_0-kdnr_M-XCPB2Js1y4oeJBmr3XZ0B-eFyKo";
-
 async function initViewer() {
-  // Use verified Cesium Ion assets: Japan terrain (#2767062) + basemap
+  // Use verified Cesium Ion assets: Japan terrain (#2767062)
+  // Note: Sandcastle provides its own Cesium.Ion token; do not override
   const viewer = new Cesium.Viewer("cesiumContainer", {
-    terrainProvider: await Cesium.Terrain.fromIonAssetId(2767062),
-    imageryProvider: await Cesium.IonImageryProvider.fromAssetId(3812),
+    terrainProvider: await Cesium.CesiumTerrainProvider.fromIonAssetId(2767062),
     baseLayerPicker: false,
     fullscreenButton: false,
     homeButton: false,
@@ -563,4 +567,9 @@ console.log("✓ Grid cells:", STATE.cells.length);
 console.log("✓ 2020 avg height:", (STATE.cells.reduce((s, c) => s + c.year1Height, 0) / STATE.cells.length).toFixed(2), "m");
 console.log("✓ 2025 avg height:", (STATE.cells.reduce((s, c) => s + c.year2Height, 0) / STATE.cells.length).toFixed(2), "m");
 console.log("⚠ Point clouds: Illustrative synthetic data");
-console.log("⚠ TODO: Request PSS Virtual Shizuoka 2020 & 2025 LiDAR epochs (Cesium Ion 3D Tiles .pnts format)");
+console.log("ℹ REAL DATA AVAILABLE (Virtual Shizuoka / GEOSPATIAL.JP):");
+console.log("  - shizuoka-2019-pointcloud (Fuji SE/Izu E, CC BY 4.0)");
+console.log("  - shizuoka-2021-pointcloud (Fuji/Shizuoka E, CC BY 4.0, candidate overlap)");
+console.log("  - Catalog: https://www.geospatial.jp/ckan/dataset?q=VIRTUAL+SHIZUOKA");
+console.log("ℹ NEXT STEP FOR PSS: Validate overlap, convert to Cesium 3D Tiles (.pnts),");
+console.log("  upload to Cesium Ion, and provide asset IDs to swap in real measured Δheight.");
