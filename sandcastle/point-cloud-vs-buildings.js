@@ -9,7 +9,7 @@
 
   // Replace with an ion asset tiled from one selected Virtual Shizuoka source.
   // Leave undefined rather than presenting unrelated point-cloud data as Virtual Shizuoka.
-  const VIRTUAL_SHIZUOKA_ION_ASSET_ID = 5124350;
+  const VIRTUAL_SHIZUOKA_ION_ASSET_ID = 5124359;
 
   const SOURCE_SEARCH_URL =
     "https://www.geospatial.jp/ckan/dataset?q=VIRTUAL+SHIZUOKA&organization=shizuokapref&sort=metadata_modified+desc";
