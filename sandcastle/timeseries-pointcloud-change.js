@@ -342,7 +342,7 @@ function injectDemoShell() {
       .change-demo-panel {
         inset: auto 8px 8px;
         width: calc(100vw - 16px);
-        max-height: min(56vh, 470px);
+        max-height: min(42vh, 380px);
         border-radius: 12px;
       }
 
@@ -521,11 +521,12 @@ const CONFIG = {
     {
       name: "Mt. Fuji Overview",
       subtitle: "Shizuoka's highest elevation (3,776m)",
-      lon: 138.73,
-      lat: 35.36,
-      height: 3500,
-      heading: 0,
-      pitch: -45,
+      lon: 138.7274,
+      lat: 35.3606,
+      targetHeight: 3776,
+      range: 18000,
+      heading: 210,
+      pitch: -25,
       duration: 3,
       mode: "year1",
     },
@@ -534,9 +535,10 @@ const CONFIG = {
       subtitle: "Baseline forest canopy digital twin zone",
       lon: 138.42,
       lat: 35.06,
-      height: 1200,
+      targetHeight: "grid",
+      range: 2600,
       heading: 45,
-      pitch: -40,
+      pitch: -28,
       duration: 4,
       mode: "year1",
     },
@@ -545,9 +547,10 @@ const CONFIG = {
       subtitle: "5-year forest growth and loss patterns",
       lon: 138.42,
       lat: 35.06,
-      height: 1200,
-      heading: 45,
-      pitch: -40,
+      targetHeight: "grid",
+      range: 2400,
+      heading: 115,
+      pitch: -26,
       duration: 4,
       mode: "year5",
     },
@@ -556,9 +559,10 @@ const CONFIG = {
       subtitle: "Red=Loss | Green=Growth | Gray=Stable",
       lon: 138.42,
       lat: 35.06,
-      height: 1200,
+      targetHeight: "grid",
+      range: 2200,
       heading: 135,
-      pitch: -35,
+      pitch: -24,
       duration: 4,
       mode: "change",
     },
@@ -567,20 +571,22 @@ const CONFIG = {
       subtitle: "Sequestration estimate (simplified model)",
       lon: 138.42,
       lat: 35.06,
-      height: 1500,
+      targetHeight: "grid",
+      range: 2800,
       heading: 225,
-      pitch: -30,
+      pitch: -26,
       duration: 4,
       mode: "carbon",
     },
     {
       name: "Shizuoka City",
       subtitle: "Urban context (PLATEAU LOD2 buildings)",
-      lon: 138.37,
-      lat: 34.98,
-      height: 2000,
+      lon: 138.383,
+      lat: 34.976,
+      targetHeight: 60,
+      range: 4500,
       heading: 315,
-      pitch: -35,
+      pitch: -24,
       duration: 3,
       mode: "year5",
     },
@@ -588,10 +594,11 @@ const CONFIG = {
       name: "Coastal View",
       subtitle: "Mountain-to-ocean watershed monitoring extent",
       lon: 138.5,
-      lat: 34.65,
-      height: 5000,
+      lat: 34.72,
+      targetHeight: 0,
+      range: 14000,
       heading: 180,
-      pitch: -20,
+      pitch: -18,
       duration: 3,
       mode: "year1",
     },
@@ -738,7 +745,17 @@ async function initViewer() {
 
   // Load verified Japan Buildings tileset (Ion asset #2602291)
   try {
-    const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2602291);
+    const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2602291, {
+      maximumScreenSpaceError: 16,
+      skipLevelOfDetail: false,
+      cullWithChildrenBounds: false,
+      dynamicScreenSpaceError: false,
+      foveatedScreenSpaceError: false,
+      foveatedTimeDelay: 0,
+      preloadFlightDestinations: true,
+      cacheBytes: 512 * 1024 * 1024,
+      maximumCacheOverflowBytes: 256 * 1024 * 1024,
+    });
     viewer.scene.primitives.add(tileset);
     console.info("Japan Buildings (ion asset 2602291) loaded.");
   } catch (error) {
@@ -943,25 +960,31 @@ function stopAutoplayTour({ hideCard = true, focusStart = false } = {}) {
 }
 
 function setCameraView(waypoint, duration) {
-  const destination = Cesium.Cartesian3.fromDegrees(
-    waypoint.lon,
-    waypoint.lat,
-    waypoint.height
+  const targetHeight =
+    waypoint.targetHeight === "grid"
+      ? STATE.cells.reduce((sum, cell) => sum + cell.terrainHeight, 0) /
+          STATE.cells.length +
+        25
+      : waypoint.targetHeight;
+  const target = new Cesium.BoundingSphere(
+    Cesium.Cartesian3.fromDegrees(waypoint.lon, waypoint.lat, targetHeight),
+    50
   );
-  const orientation = {
-    heading: Cesium.Math.toRadians(waypoint.heading),
-    pitch: Cesium.Math.toRadians(waypoint.pitch),
-  };
+  const offset = new Cesium.HeadingPitchRange(
+    Cesium.Math.toRadians(waypoint.heading),
+    Cesium.Math.toRadians(waypoint.pitch),
+    waypoint.range
+  );
 
   if (duration === 0) {
-    viewer.camera.setView({ destination, orientation });
+    viewer.camera.viewBoundingSphere(target, offset);
+    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
     return Promise.resolve("complete");
   }
 
   return new Promise((resolve) => {
-    viewer.camera.flyTo({
-      destination,
-      orientation,
+    viewer.camera.flyToBoundingSphere(target, {
+      offset,
       duration,
       complete: () => resolve("complete"),
       cancel: () => resolve("cancel"),
@@ -1108,9 +1131,10 @@ function cameraOverview(immediate = false) {
     {
       lon: 138.42,
       lat: 35.06,
-      height: 25000,
-      heading: 0,
-      pitch: -45,
+      targetHeight: "grid",
+      range: 30000,
+      heading: 180,
+      pitch: -35,
     },
     "Regional overview",
     immediate
@@ -1122,9 +1146,10 @@ function cameraFoothills() {
     {
       lon: 138.42,
       lat: 35.06,
-      height: 1200,
+      targetHeight: "grid",
+      range: 2600,
       heading: 45,
-      pitch: -40,
+      pitch: -28,
     },
     "Foothills"
   );
@@ -1133,11 +1158,12 @@ function cameraFoothills() {
 function cameraCity() {
   return useCameraPreset(
     {
-      lon: 138.37,
-      lat: 34.98,
-      height: 2000,
+      lon: 138.383,
+      lat: 34.976,
+      targetHeight: 60,
+      range: 4500,
       heading: 315,
-      pitch: -35,
+      pitch: -24,
     },
     "Shizuoka city"
   );
