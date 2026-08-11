@@ -274,7 +274,7 @@
     fullscreenButton: false,
     selectionIndicator: false,
     infoBox: false,
-    requestRenderMode: true,
+    requestRenderMode: false, // point cloud tile streaming needs continuous render loop
     maximumRenderTimeChange: Infinity,
   });
 
@@ -1579,6 +1579,12 @@
 
       scene.primitives.add(pointCloud);
       state.pointCloud = pointCloud;
+
+      // Re-render whenever new tiles stream in (critical with requestRenderMode: true)
+      pointCloud.tileLoad.addEventListener(() => scene.requestRender());
+      pointCloud.tileUnload.addEventListener(() => scene.requestRender());
+      pointCloud.loadProgress.addEventListener(() => scene.requestRender());
+
       layerButtons.forEach((button) => {
         button.removeAttribute("aria-disabled");
       });
@@ -1592,6 +1598,24 @@
       // Show classification legend now that LiDAR is live
       const legendSection = shell.querySelector("#vs-legend-section");
       if (legendSection) legendSection.style.display = "";
+
+      // Re-apply chapter visibility now that point cloud is available
+      // (chapter may have fired before async load completed)
+      if (state.chapterIndex === 2) {
+        pointCloud.show = true;
+        state.layerMode = "pointcloud";
+        if (state.buildings) state.buildings.show = false;
+        updateLayerButtons();
+      } else if (state.chapterIndex === 3) {
+        pointCloud.show = true;
+        state.layerMode = "both";
+        if (state.buildings) state.buildings.show = true;
+        updateLayerButtons();
+      } else {
+        // Apply whatever current mode says
+        pointCloud.show = state.layerMode !== "buildings";
+      }
+      scene.requestRender();
     } catch (error) {
       setStatus(
         pointStatus,
