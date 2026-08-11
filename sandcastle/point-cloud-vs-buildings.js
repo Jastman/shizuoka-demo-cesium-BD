@@ -98,7 +98,7 @@
         "Mt. Fuji anchors the northern skyline. Its flanks drain southwest into the Abe River valley, which fans out across a coastal plain before meeting Suruga Bay — one of Japan's deepest bays. This geography shapes everything: the city grew on alluvial floodplain, bounded by steep volcanic ridges and an active coastline.",
       chapter2Title: "A city of 700,000 built on a delta",
       chapter2Copy:
-        "Shizuoka city spreads across the Abe River delta. Look closely: the dense urban grid meets abrupt terrain transitions — hills, river channels, reclaimed coast. Virtual Shizuoka's airborne LiDAR captures all of it at survey precision, resolving roof heights, tree canopy, and ground surface simultaneously.",
+        "The Red Relief Image Map (RRIM) exposes what satellite photos hide: flat alluvial plains and reclaimed coastline appear pale, while the volcanic ridges and river embankments flare deep red. The hard seam where Shizuoka's urban grid meets steep terrain is instantly readable — the same boundary that shapes flood risk, growth limits, and evacuation routes.",
       chapter3Title: "Classified point cloud: reading the city layer by layer",
       chapter3Copy:
         "The LiDAR survey classifies every return: ground (tan), low vegetation (lime), high vegetation (green), buildings (orange), and water (blue). Toggle 'LiDAR only' to strip the city to its bare terrain, or 'LiDAR + buildings' to compare measured canopy against modeled building footprints.",
@@ -201,7 +201,7 @@
         "富士山が北の空を占め、その山腹から安倍川が南西に向かって流れ、海岸平野へと広がり、駿河湾に注ぎます。駿河湾は日本最深の湾のひとつです。この地形が静岡のすべてを形づくっています。市街地は沖積三角州の上に発達し、急峻な火山性の尾根と活発な海岸線に囲まれています。",
       chapter2Title: "沖積デルタに広がる70万人の都市",
       chapter2Copy:
-        "静岡市は安倍川デルタに広がっています。密集した市街地が急峻な地形変化と接していることに注目してください。丘陵、河川、埋め立て地が入り組んでいます。VIRTUAL SHIZUOKAの航空LiDARはすべてをサーベイ精度で捉え、屋根の高さ、樹冠、地表面を同時に記録しています。",
+        "赤色立体地図（RRIM）は衛星写真では分からない地形を可視化します。沖積平野や埋立地は白く表れ、火山性山稜・河川堤防は濃い赤で際立ちます。市街地グリッドが急峻な地形と接する境界線が一目で分かり、それは洪水リスク・市街地拡張限界・避難経路を規定する境界でもあります。",
       chapter3Title: "分類済み点群：レイヤーで読む都市",
       chapter3Copy:
         "LiDAR測量はすべての反射を分類します。地盤（タン）、低植生（黄緑）、高植生（緑）、建物（オレンジ）、水面（青）。レイヤーを切り替えて、地形だけに絞った都市の姿や、樹木の樹冠とモデル化された建物フットプリントを比較してください。",
@@ -290,15 +290,28 @@
   scene.backgroundColor = Cesium.Color.fromCssColorString("#8fc5e8");
   scene.fog.enabled = true;
 
-  // Hillshade layer — added on top of OSM, toggled for terrain-contrast chapters
-  const hillshadeLayer = viewer.imageryLayers.addImageryProvider(
+  // Chapter 2 terrain-contrast layers — GSI Japan official tiles
+  // Layer 1: RRIM (赤色立体地図 / Red Relief Image Map) — flat delta = pale, steep ridges = red
+  const rrimLayer = viewer.imageryLayers.addImageryProvider(
     new Cesium.UrlTemplateImageryProvider({
-      url: "https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}",
-      credit: "Esri, USGS, NGA, NASA, CGIAR, N Robinson, NCEAS, NLS, OS, NMA, Geodatastyrelsen and the GIS User Community",
+      url: "https://cyberjapandata.gsi.go.jp/xyz/sekishoku/{z}/{x}/{y}.png",
+      credit: "国土地理院 (Geospatial Information Authority of Japan) — 赤色立体地図",
+      minimumLevel: 2,
+      maximumLevel: 14,
+    })
+  );
+  rrimLayer.alpha = 0.0;
+
+  // Layer 2: GSI Slope map (傾斜量図) — dark = steep, light = flat — subtle overlay
+  const slopeLayer = viewer.imageryLayers.addImageryProvider(
+    new Cesium.UrlTemplateImageryProvider({
+      url: "https://cyberjapandata.gsi.go.jp/xyz/slopemap/{z}/{x}/{y}.png",
+      credit: "国土地理院 (Geospatial Information Authority of Japan) — 傾斜量図",
+      minimumLevel: 2,
       maximumLevel: 15,
     })
   );
-  hillshadeLayer.alpha = 0.0; // hidden by default; shown for terrain-contrast chapters
+  slopeLayer.alpha = 0.0;
 
   const style = document.createElement("style");
   style.textContent = `
@@ -1219,8 +1232,9 @@
     state.chapterIndex = (index + CHAPTERS.length) % CHAPTERS.length;
     const chapter = CHAPTERS[state.chapterIndex];
 
-    // Chapter 2 (index 1): terrain-contrast view — enable hillshade to show delta boundary
-    hillshadeLayer.alpha = state.chapterIndex === 1 ? 0.55 : 0.0;
+    // Chapter 2 (index 1): RRIM + slope overlay to show delta/terrain boundary
+    rrimLayer.alpha  = state.chapterIndex === 1 ? 0.82 : 0.0;
+    slopeLayer.alpha = state.chapterIndex === 1 ? 0.25 : 0.0;
     scene.requestRender();
 
     resetCountdownDisplay();
