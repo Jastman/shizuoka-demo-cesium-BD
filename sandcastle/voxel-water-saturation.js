@@ -34,7 +34,7 @@
     infoBox: false,
   });
   viewer.scene.globe.enableLighting = true;
-  viewer.scene.globe.depthTestAgainstTerrain = true;
+  viewer.scene.globe.depthTestAgainstTerrain = false;
   viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#08131d");
   viewer.scene.requestRenderMode = true;
   viewer.scene.maximumRenderTimeChange = Infinity;
@@ -168,31 +168,31 @@
   const cameras = [
     {
       label: "Abe River watershed",
-      target: [138.41, 35.28, 800],
+      target: [138.383, 35.05, 200],
       heading: 185,
-      pitch: -25,
-      range: 30000,
+      pitch: -28,
+      range: 22000,
     },
     {
       label: "Voxel analytics volume",
-      target: [138.41, 35.22, 500],
+      target: [138.383, 34.972, 300],
       heading: 205,
-      pitch: -30,
-      range: 20000,
+      pitch: -35,
+      range: 12000,
     },
     {
       label: "Urban core + LiDAR",
       target: [138.383, 34.972, 40],
-      heading: 190,
+      heading: 200,
       pitch: -22,
-      range: 10000,
+      range: 7000,
     },
     {
       label: "Coast and Suruga Bay",
-      target: [138.44, 34.86, 0],
+      target: [138.40, 34.88, 0],
       heading: 165,
       pitch: -28,
-      range: 36000,
+      range: 30000,
     },
   ];
   const tourCopy = [
@@ -204,7 +204,7 @@
     {
       title: "2. Watershed voxelization",
       body:
-        "Each voxel cell aggregates water saturation, topographic wetness, and runoff risk across the 9 km × 16 km × 1.4 km volume. Switch analytical views, adjust the visibility threshold, or scrub through the 24-hour storm simulation below.",
+        "Each voxel cell aggregates water saturation, topographic wetness, and runoff risk across the 5 km × 6 km × 600 m urban corridor volume. Switch analytical views, adjust the visibility threshold, or scrub through the 24-hour storm simulation below.",
     },
     {
       title: "3. Urban LiDAR context",
@@ -306,10 +306,10 @@
     this.availableLevels = 3;
     this.maximumTileCount = 73;
     this.globalTransform = Cesium.Transforms.eastNorthUpToFixedFrame(
-      Cesium.Cartesian3.fromDegrees(138.41, 35.22, 500)
+      Cesium.Cartesian3.fromDegrees(138.383, 34.972, 300)
     );
     this.shapeTransform = Cesium.Matrix4.fromScale(
-      new Cesium.Cartesian3(9000, 16000, 1400)
+      new Cesium.Cartesian3(5000, 6000, 600)
     );
     this.view = options.view;
     this.aggregation = options.aggregation;
@@ -827,7 +827,7 @@
     );
     const localPos = Cesium.Matrix4.multiplyByPoint(invTransform, cartesian, new Cesium.Cartesian3());
     // shapeTransform maps [-1,1]^3 → ENU meters; invert to get normalized [0,1] coords
-    const halfExtents = new Cesium.Cartesian3(9000 / 2, 16000 / 2, 1400 / 2);
+    const halfExtents = new Cesium.Cartesian3(5000 / 2, 6000 / 2, 600 / 2);
     const nx = Cesium.Math.clamp((localPos.x / halfExtents.x + 1) / 2, 0, 1);
     const ny = Cesium.Math.clamp((localPos.y / halfExtents.y + 1) / 2, 0, 1);
     const nz = Cesium.Math.clamp((localPos.z / halfExtents.z + 1) / 2, 0, 1);
@@ -841,10 +841,10 @@
     };
 
     // Convert normalized to approximate geographic coords
-    // Voxel center: 138.41°E, 35.22°N; extents ~9km E-W, ~16km N-S, ~1.4km Z
-    const lon = (138.41 - 0.0405) + nx * (9000 / 111320 * (1 / Math.cos(35.22 * Math.PI / 180)));
-    const lat = (35.22 - 0.072) + ny * (16000 / 111320);
-    const elev = Math.round(500 + (nz - 0.5) * 1400);
+    // Voxel center: 138.383°E, 34.972°N; extents 5km E-W, 6km N-S, 600m Z
+    const lon = (138.383 - 0.0225) + nx * (5000 / 111320 * (1 / Math.cos(34.972 * Math.PI / 180)));
+    const lat = (34.972 - 0.027) + ny * (6000 / 111320);
+    const elev = Math.round(300 + (nz - 0.5) * 600);
 
     const viewLabel = labelForView[state.view] || state.view;
     inspectPopup.innerHTML = `
