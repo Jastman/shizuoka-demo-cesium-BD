@@ -10,6 +10,7 @@
     "https://www.geospatial.jp/ckan/dataset?q=VIRTUAL+SHIZUOKA&organization=shizuokapref&sort=metadata_modified+desc";
   const PLATEAU_AOI_LOD2 =
     "https://assets.cms.plateau.reearth.io/assets/16/f01621-f72d-4c64-9c40-67c97cee7c5f/22100_shizuoka-shi_city_2023_citygml_3_op_bldg_3dtiles_22101_aoi-ku_lod2/tileset.json";
+  const LIDAR_ION_ASSET_ID = 5124359;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const terrainProvider = await Cesium.createWorldBathymetryAsync({
     requestVertexNormals: true,
@@ -166,54 +167,54 @@
 
   const cameras = [
     {
-      label: "Mountain source",
-      target: [138.41, 35.38, 1400],
-      heading: 180,
-      pitch: -22,
-      range: 28000,
+      label: "Abe River watershed",
+      target: [138.41, 35.28, 800],
+      heading: 185,
+      pitch: -25,
+      range: 30000,
     },
     {
-      label: "Watershed voxels",
+      label: "Voxel analytics volume",
       target: [138.41, 35.22, 500],
-      heading: 200,
-      pitch: -28,
-      range: 22000,
+      heading: 205,
+      pitch: -30,
+      range: 20000,
     },
     {
-      label: "River and city",
-      target: [138.41, 35.06, 80],
+      label: "Urban core + LiDAR",
+      target: [138.383, 34.972, 40],
       heading: 190,
-      pitch: -20,
-      range: 14000,
+      pitch: -22,
+      range: 10000,
     },
     {
-      label: "Coast and bathymetry",
-      target: [138.47, 34.85, 0],
-      heading: 160,
+      label: "Coast and Suruga Bay",
+      target: [138.44, 34.86, 0],
+      heading: 165,
       pitch: -28,
-      range: 38000,
+      range: 36000,
     },
   ];
   const tourCopy = [
     {
-      title: "1. Mountain source",
+      title: "1. Abe River watershed",
       body:
-        "Virtual Shizuoka LP, ALB and MMS are authoritative source observations. LAS/LAZ points are inputs; the colored volume is an illustrative analytical product, not a measured voxel dataset.",
+        "Water intelligence begins in the mountains. The Abe River drains ~167 km² of the Akaishi range before entering Shizuoka city. The voxel analytics volume covers this full watershed corridor — mountains to coast.",
     },
     {
       title: "2. Watershed voxelization",
       body:
-        "After confirming source CRS, epoch and zone, transform to the agreed target (PSS previously cited EPSG:6677), normalize XYZ, aggregate each cell, and write FLOAT32 properties into an implicit hierarchy for selective streaming.",
+        "Each voxel cell aggregates water saturation, topographic wetness, and runoff risk across the 9 km × 16 km × 1.4 km volume. Switch analytical views, adjust the visibility threshold, or scrub through the 24-hour storm simulation below.",
     },
     {
-      title: "3. Change and simulation",
+      title: "3. Urban LiDAR context",
       body:
-        "Switch between saturation, change, wetness and runoff indices, then compare aggregation rules. These derived values support screening and simulation—not authoritative field measurements.",
+        "The Abe River delta urban area (5 km × 6 km, 280k points) shows classified ground, buildings, vegetation and the river channel. This is the zone where watershed runoff intersects dense urban infrastructure — the critical flood-risk corridor.",
     },
     {
-      title: "4. Coast and ocean",
+      title: "4. Suruga Bay outflow",
       body:
-        "The geographic story follows connected water from Shizuoka's mountains through the Abe watershed and city to Cesium World Bathymetry at Suruga Bay.",
+        "The connected water story ends here: watershed runoff → Shizuoka urban floodplain → Suruga Bay. Cesium World Bathymetry continues the terrain model into the ocean. This full-corridor view underpins flood-risk planning and emergency response.",
     },
   ];
 
@@ -531,6 +532,7 @@
 
   const story = document.createElement("aside");
   story.className = "vx-story";
+  story.hidden = true;
   story.setAttribute("aria-labelledby", "vx-story-title");
   story.innerHTML = `
     <div class="vx-kicker" id="vx-story-step">Guided chapter</div>
@@ -744,6 +746,28 @@
   } catch (error) {
     ui.querySelector("#vx-source-status").textContent =
       "Illustrative derived voxels · PLATEAU city context unavailable";
+  }
+
+  try {
+    const lidarTileset = await Cesium.Cesium3DTileset.fromIonAssetId(LIDAR_ION_ASSET_ID, {
+      maximumScreenSpaceError: 4,
+    });
+    // Color by classification: Ground=tan, LowVeg=lime, HighVeg=green, Building=orange, Water=blue
+    lidarTileset.style = new Cesium.Cesium3DTileStyle({
+      color: {
+        conditions: [
+          ["${Classification} === 9", "color('#4db8ff', 0.9)"],
+          ["${Classification} === 6", "color('#e05a1a', 0.9)"],
+          ["${Classification} === 4", "color('#2e7d32', 0.85)"],
+          ["${Classification} === 3", "color('#66bb6a', 0.85)"],
+          ["true",                    "color('#a08c6e', 0.8)"],
+        ],
+      },
+      pointSize: 2,
+    });
+    viewer.scene.primitives.add(lidarTileset);
+  } catch (error) {
+    // LiDAR context optional — voxel analytics still works
   }
 
   rebuildVoxelPrimitive();
