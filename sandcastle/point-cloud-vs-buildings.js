@@ -102,9 +102,9 @@
       chapter3Title: "Classified point cloud: reading the city layer by layer",
       chapter3Copy:
         "The LiDAR survey classifies every return: ground (tan), low vegetation (lime), high vegetation (green), buildings (orange), and water (blue). Toggle 'LiDAR only' to strip the city to its bare terrain, or 'LiDAR + buildings' to compare measured canopy against modeled building footprints.",
-      chapter4Title: "The Fuji corridor: from peak to floodplain",
+      chapter4Title: "Urban edge meets the first ridge",
       chapter4Copy:
-        "Pan north and the LiDAR narrative extends toward the foothills of Fuji-san. The same dataset that shows Shizuoka's urban blocks resolves forested ridges and terraced tea plantations — a continuous digital twin from stratovolcano to shoreline.",
+        "At the northern fringe of Shizuoka city, the LiDAR survey reveals the exact line where flat reclaimed land ends and the first volcanic slopes begin. Classified returns distinguish tree canopy on the hillside from building rooftops on the plain — a boundary that defines flood risk, development limits, and evacuation corridors.",
       viewSelected: (label) => `${label} view selected.`,
       pointNeedsAsset:
         "Virtual Shizuoka point-cloud controls require a configured ion asset ID.",
@@ -205,9 +205,9 @@
       chapter3Title: "分類済み点群：レイヤーで読む都市",
       chapter3Copy:
         "LiDAR測量はすべての反射を分類します。地盤（タン）、低植生（黄緑）、高植生（緑）、建物（オレンジ）、水面（青）。レイヤーを切り替えて、地形だけに絞った都市の姿や、樹木の樹冠とモデル化された建物フットプリントを比較してください。",
-      chapter4Title: "富士山回廊：山頂から沖積平野へ",
+      chapter4Title: "市街地の縁、最初の山脚との接線",
       chapter4Copy:
-        "北に視点を移すと、LiDARのデータは富士山麓まで続きます。静岡の市街地ブロックを捉えたのと同じデータが、内陸の森林尾根や茶畑の段々畑まで解像します。成層火山から海岸線まで続く、途切れのないデジタルツインです。",
+        "静岡市北部の端りでは、LiDARデータが平坦な埋立地と火山性斜面の始まりを高精度で表現しています。樹木の樹冠と平地の屋根を分類し、洪水リスク・市街地拡張限界・避難路を規定する境界線を明確に示しています。",
       viewSelected: (label) => `${label}ビューを選択しました。`,
       pointNeedsAsset:
         "VIRTUAL SHIZUOKA点群の操作にはionアセットIDの設定が必要です。",
@@ -1049,6 +1049,12 @@
       pitch: Cesium.Math.toRadians(-55),
       range: 28000,
     },
+    foothills: {
+      target: Cesium.Cartesian3.fromDegrees(138.40, 35.05, 200),
+      heading: Cesium.Math.toRadians(350),
+      pitch: Cesium.Math.toRadians(-22),
+      range: 8000,
+    },
   };
 
   const CHAPTERS = [
@@ -1068,7 +1074,7 @@
       copyKey: "chapter3Copy",
     },
     {
-      view: "fuji",
+      view: "foothills",
       titleKey: "chapter4Title",
       copyKey: "chapter4Copy",
     },
@@ -1288,6 +1294,18 @@
       slopeLayer.alpha = state.rrimManual ? 0.25 : 0.0;
     }
     if (rrimToggle) rrimToggle.checked = state.chapterIndex === 1 || state.rrimManual;
+
+    // Chapter 3 & 4: make sure point cloud is visible to tell the LiDAR story
+    if (state.chapterIndex >= 2 && state.pointCloud) {
+      // Only force if user is in buildings mode (not if they manually switched)
+      if (state.layerMode === "buildings") {
+        state.layerMode = "both";
+        if (state.buildings) state.buildings.show = true;
+        state.pointCloud.show = true;
+        updateLayerButtons();
+      }
+    }
+
     scene.requestRender();
 
     resetCountdownDisplay();
