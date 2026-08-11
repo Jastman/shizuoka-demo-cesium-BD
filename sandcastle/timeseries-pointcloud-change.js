@@ -64,16 +64,16 @@ const TRANSLATIONS = {
       "Terrain: Cesium ion asset 2767062, Japan regional terrain.",
     sourceBuildings:
       "Buildings: Cesium ion asset 2602291, Japan Buildings 3D Tiles.",
-    sourceCandidate: "Public source candidate:",
-    source2019: "Shizuoka 2019 point cloud",
-    source2021: "Shizuoka 2021 point cloud",
+    sourceCandidate: "LiDAR source:",
+    source2019: "Atami LP LiDAR 2019 (Virtual Shizuoka, Cesium Ion asset 5126345)",
+    source2021: "Atami LP LiDAR 2020 (Virtual Shizuoka, Cesium Ion asset 5126355)",
     sourcePublisher:
       "Publisher: Shizuoka Prefecture via GEOSPATIAL.JP / VIRTUAL SHIZUOKA.",
-    sourceLicense: "Catalog terms: dual licensed CC BY 4.0 / ODbL.",
+    sourceLicense: "Catalog terms: CC BY 4.0.",
     sourceOverlap:
-      "Both catalogs use JGD2011 / Japan Plane Rectangular CS VIII. Their catalog extents overlap, but usable epoch overlap still requires tile-level validation.",
+      "Both epochs use JGD2011 / Japan Plane Rectangular CS VIII. Tiles 08NF2354–2365 cover the Atami Izusan area.",
     sourceProduction:
-      "The public LAS archives are not loaded here. Production use requires validated overlapping tiles converted to streamable 3D Tiles and uploaded as separate epoch assets.",
+      "Canopy change values are illustrative. Real epoch point clouds (Cesium Ion assets 5126345, 5126355) available for production integration.",
     legendYear1: "2020 canopy-height legend",
     legendYear5: "2025 canopy-height legend",
     legendChange: "Height-change legend",
@@ -203,16 +203,16 @@ const TRANSLATIONS = {
       "地形：Cesium ionアセット2767062（日本地域地形）。",
     sourceBuildings:
       "建物：Cesium ionアセット2602291（Japan Buildings 3D Tiles）。",
-    sourceCandidate: "公開データ候補：",
-    source2019: "静岡県2019年点群",
-    source2021: "静岡県2021年点群",
+    sourceCandidate: "LiDARデータ出典：",
+    source2019: "熱海LP LiDAR 2019（Virtual Shizuoka、Cesium Ionアセット5126345）",
+    source2021: "熱海LP LiDAR 2020（Virtual Shizuoka、Cesium Ionアセット5126355）",
     sourcePublisher:
       "公開者：静岡県（GEOSPATIAL.JP / VIRTUAL SHIZUOKA経由）。",
-    sourceLicense: "カタログ利用条件：CC BY 4.0 / ODbLのデュアルライセンス。",
+    sourceLicense: "カタログ利用条件：CC BY 4.0。",
     sourceOverlap:
-      "両カタログはJGD2011／平面直角座標系VIII系を使用しています。カタログ範囲は重なりますが、利用可能な時点間の重複はタイル単位での検証が必要です。",
+      "両時点はJGD2011／平面直角座標系VIII系を使用。タイル08NF2354–2365が熱海伊豆山エリアをカバーしています。",
     sourceProduction:
-      "公開LASアーカイブはこのデモでは読み込んでいません。実運用には、重複タイルを検証し、ストリーミング可能な3D Tilesへ変換して時点別アセットとして公開する必要があります。",
+      "樹冠変化値はイラスト的な値です。実時点の点群（Cesium Ionアセット5126345、5126355）は本番統合に利用可能です。",
     legendYear1: "2020年 樹冠高凡例",
     legendYear5: "2025年 樹冠高凡例",
     legendChange: "樹高変化凡例",
@@ -1972,6 +1972,6 @@ function animateEpochChange() {
    `Demo 5 ready with ${STATE.cells.length} deterministic illustrative grid cells.`
   );
   console.info(
-   "Virtual Shizuoka candidate epochs: shizuoka-2019-pointcloud and shizuoka-2021-pointcloud; catalog terms CC BY 4.0 / ODbL."
+   "Virtual Shizuoka Atami LP LiDAR epochs uploaded to Cesium Ion: asset 5126345 (2019 pre-disaster), asset 5126355 (2020); catalog terms CC BY 4.0."
   );
 })();

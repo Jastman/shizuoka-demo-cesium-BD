@@ -7,9 +7,9 @@
   const JAPAN_TERRAIN_ASSET_ID = 2767062;
   const JAPAN_BUILDINGS_ASSET_ID = 2602291;
 
-  // Replace with an ion asset tiled from one selected Virtual Shizuoka source.
-  // Leave undefined rather than presenting unrelated point-cloud data as Virtual Shizuoka.
-  const VIRTUAL_SHIZUOKA_ION_ASSET_ID = 5124359;
+  // Atami LP LiDAR 2019 — real Virtual Shizuoka data, tiles 08NF2350–2353
+  // Uploaded to Ion from virtual-shizuoka.s3.ap-northeast-1.amazonaws.com/2019/LP/Ground/...
+  const VIRTUAL_SHIZUOKA_ION_ASSET_ID = 5126337;
 
   const SOURCE_SEARCH_URL =
     "https://www.geospatial.jp/ckan/dataset?q=VIRTUAL+SHIZUOKA&organization=shizuokapref&sort=metadata_modified+desc";
