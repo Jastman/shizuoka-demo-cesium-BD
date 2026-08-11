@@ -1302,9 +1302,19 @@
     }
     if (rrimToggle) rrimToggle.checked = state.chapterIndex === 1 || state.chapterIndex === 3 || state.rrimManual;
 
-    // Chapter 3 & 4: make sure point cloud is visible to tell the LiDAR story
-    if (state.chapterIndex >= 2 && state.pointCloud) {
-      // Only force if user is in buildings mode (not if they manually switched)
+    // Chapter 3: force "LiDAR only" so classified point cloud colors are visible
+    // Chapter 4: force "LiDAR + buildings" so building exposure vs terrain is clear
+    if (state.chapterIndex === 2 && state.pointCloud) {
+      state.layerMode = "pointcloud";
+      if (state.buildings) state.buildings.show = false;
+      state.pointCloud.show = true;
+      updateLayerButtons();
+    } else if (state.chapterIndex === 3 && state.pointCloud) {
+      state.layerMode = "both";
+      if (state.buildings) state.buildings.show = true;
+      state.pointCloud.show = true;
+      updateLayerButtons();
+    } else if (state.chapterIndex >= 2 && state.pointCloud) {
       if (state.layerMode === "buildings") {
         state.layerMode = "both";
         if (state.buildings) state.buildings.show = true;
