@@ -352,11 +352,12 @@
 
     .vs-story {
       position: fixed;
-      inset: auto auto 42px 14px;
-      width: min(420px, calc(100vw - 28px));
-      margin: 0;
-      border-radius: 16px;
-      padding: 18px;
+      /* Bottom-center, above Cesium toolbar */
+      inset: auto 0 52px 0;
+      width: min(560px, calc(100vw - 32px));
+      margin: 0 auto;
+      border-radius: 20px;
+      padding: 20px 22px 18px;
       color: var(--vs-text);
     }
 
@@ -368,27 +369,91 @@
       display: none;
     }
 
+    /* Tour CTA — vivid accent, sits at TOP of panel */
     .vs-tour-cta {
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
       width: 100%;
-      margin-top: 14px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      background: var(--vs-accent);
-      color: #0a1628;
+      margin-bottom: 14px;
+      padding: 13px 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #54d2c7 0%, #3ab8d8 100%);
+      color: #061420;
       font-size: 14px;
       font-weight: 800;
-      letter-spacing: 0.01em;
+      letter-spacing: 0.02em;
       text-align: center;
       cursor: pointer;
       border: none;
-      transition: background 120ms, transform 80ms;
+      box-shadow: 0 4px 18px rgba(84, 210, 199, 0.35);
+      transition: filter 120ms, transform 80ms, box-shadow 120ms;
     }
 
-    .vs-tour-cta:hover { background: var(--vs-accent-strong); }
-    .vs-tour-cta:active { transform: scale(0.98); }
-    .vs-tour-cta:focus-visible { outline: 3px solid var(--vs-accent-strong); outline-offset: 2px; }
+    .vs-tour-cta::before {
+      content: "▶";
+      font-size: 11px;
+    }
+
+    .vs-tour-cta:hover {
+      filter: brightness(1.12);
+      box-shadow: 0 6px 22px rgba(84, 210, 199, 0.5);
+    }
+    .vs-tour-cta:active { transform: scale(0.97); }
+    .vs-tour-cta:focus-visible { outline: 3px solid #ffffff; outline-offset: 3px; }
     .vs-tour-cta.is-hidden { display: none; }
+
+    /* Story header row: step counter + countdown ring side by side */
+    .vs-story-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 0 6px;
+    }
+
+    /* Countdown ring */
+    .vs-countdown {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      flex-shrink: 0;
+    }
+
+    .vs-countdown svg {
+      position: absolute;
+      inset: 0;
+      transform: rotate(-90deg);
+    }
+
+    .vs-countdown-track {
+      fill: none;
+      stroke: rgba(196, 209, 223, 0.18);
+      stroke-width: 3.5;
+    }
+
+    .vs-countdown-arc {
+      fill: none;
+      stroke: var(--vs-accent);
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      /* circumference = 2π × 17 ≈ 106.8 */
+      stroke-dasharray: 106.8;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1000ms linear;
+    }
+
+    .vs-countdown-num {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--vs-accent-strong);
+      font-variant-numeric: tabular-nums;
+    }
 
     .vs-eyebrow {
       margin: 0 0 5px;
@@ -435,27 +500,31 @@
     }
 
     .vs-story-title {
-      margin: 2px 36px 4px 0;
-      font-size: 19px;
+      margin: 0 0 6px;
+      font-size: 20px;
       line-height: 1.2;
+      font-weight: 800;
     }
 
     .vs-story-copy {
-      min-height: 5.4em;
-      margin: 8px 0 14px;
+      margin: 0 0 14px;
       color: var(--vs-muted);
-      font-size: 13px;
+      font-size: 13.5px;
+      line-height: 1.55;
     }
 
     .vs-close {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 44px;
-      height: 44px;
+      top: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      font-size: 20px;
+      font-size: 18px;
+      opacity: 0.7;
     }
+
+    .vs-close:hover { opacity: 1; }
 
     .vs-section {
       padding-top: 14px;
@@ -517,13 +586,39 @@
     }
 
     .vs-story-actions {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 7px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .vs-story-actions .vs-button {
       text-align: center;
+      flex: 1;
+    }
+
+    .vs-story-dots {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .vs-story-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(196, 209, 223, 0.35);
+      transition: background 200ms, transform 200ms;
+    }
+
+    .vs-story-dot.is-active {
+      background: var(--vs-accent);
+      transform: scale(1.4);
+    }
+
+    .vs-story-dot.is-done {
+      background: rgba(84, 210, 199, 0.45);
     }
 
     .vs-status-list {
@@ -681,6 +776,7 @@
       .vs-story {
         inset: auto 8px 38px 8px;
         width: auto;
+        border-radius: 16px;
       }
     }
 
@@ -717,6 +813,7 @@
   shell.lang = locale;
   shell.innerHTML = `
     <main class="vs-panel" aria-labelledby="vs-title">
+      <button class="vs-tour-cta" id="vs-open-story" type="button" data-i18n="openTour">${t("openTour")}</button>
       <div class="vs-language">
         <label for="vs-language" data-i18n="languageLabel">${t("languageLabel")}</label>
         <select id="vs-language">
@@ -850,7 +947,6 @@
           </p>
         </div>
       </details>
-      <button class="vs-tour-cta" id="vs-open-story" type="button" data-i18n="openTour">${t("openTour")}</button>
     </main>
 
     <section
@@ -862,16 +958,29 @@
       aria-describedby="vs-story-copy"
     >
       <button class="vs-button vs-close" id="vs-close" type="button" aria-label="${t("closeTour")}" data-i18n-aria-label="closeTour">×</button>
-      <p class="vs-eyebrow" id="vs-story-step"></p>
+
+      <div class="vs-story-header">
+        <p class="vs-eyebrow" id="vs-story-step"></p>
+        <div class="vs-countdown" aria-hidden="true">
+          <svg viewBox="0 0 38 38" width="42" height="42">
+            <circle class="vs-countdown-track" cx="19" cy="19" r="17"/>
+            <circle class="vs-countdown-arc" id="vs-countdown-arc" cx="19" cy="19" r="17"/>
+          </svg>
+          <span class="vs-countdown-num" id="vs-countdown-num">30</span>
+        </div>
+      </div>
+
       <h2 class="vs-story-title" id="vs-story-title"></h2>
       <p class="vs-story-copy" id="vs-story-copy"></p>
+
       <div class="vs-progress" aria-hidden="true">
         <div class="vs-progress-bar" id="vs-progress"></div>
       </div>
+
       <div class="vs-story-actions">
         <button class="vs-button" id="vs-previous" type="button" data-i18n="previous">${t("previous")}</button>
+        <div class="vs-story-dots" id="vs-story-dots" aria-hidden="true"></div>
         <button class="vs-button" id="vs-play" type="button">${t("pause")}</button>
-        <button class="vs-button" id="vs-restart" type="button" data-i18n="restart">${t("restart")}</button>
         <button class="vs-button" id="vs-next" type="button" data-i18n="next">${t("next")}</button>
       </div>
     </section>
@@ -949,6 +1058,7 @@
     playing: false,
     storyOpen: false,
     timer: null,
+    countdownInterval: null,
   };
 
   function flyTo(viewName) {
@@ -1037,21 +1147,51 @@
     scene.requestRender();
   }
 
+  const CHAPTER_DURATION_MS = 30000;
+  const COUNTDOWN_CIRCUMFERENCE = 2 * Math.PI * 17; // ≈ 106.8
+
   function stopTimer() {
     if (state.timer !== null) {
       window.clearTimeout(state.timer);
       state.timer = null;
     }
+    if (state.countdownInterval !== null) {
+      window.clearInterval(state.countdownInterval);
+      state.countdownInterval = null;
+    }
   }
 
-  function scheduleNextChapter() {
+  function startCountdown() {
     stopTimer();
-    if (!state.playing || !state.storyOpen) {
-      return;
+    if (!state.playing || !state.storyOpen) return;
+
+    const arc = shell.querySelector("#vs-countdown-arc");
+    const num = shell.querySelector("#vs-countdown-num");
+    let secondsLeft = CHAPTER_DURATION_MS / 1000;
+
+    function tick() {
+      if (num) num.textContent = String(secondsLeft);
+      if (arc) {
+        const fraction = secondsLeft / (CHAPTER_DURATION_MS / 1000);
+        arc.style.strokeDashoffset = String(COUNTDOWN_CIRCUMFERENCE * (1 - fraction));
+      }
+      secondsLeft--;
     }
+    tick();
+    state.countdownInterval = window.setInterval(tick, 1000);
+
     state.timer = window.setTimeout(() => {
+      window.clearInterval(state.countdownInterval);
+      state.countdownInterval = null;
       showChapter((state.chapterIndex + 1) % CHAPTERS.length);
-    }, 9000);
+    }, CHAPTER_DURATION_MS);
+  }
+
+  function resetCountdownDisplay() {
+    const arc = shell.querySelector("#vs-countdown-arc");
+    const num = shell.querySelector("#vs-countdown-num");
+    if (num) num.textContent = "30";
+    if (arc) arc.style.strokeDashoffset = "0";
   }
 
   function updatePlayButton() {
@@ -1070,6 +1210,14 @@
     shell.querySelector("#vs-story-copy").textContent = t(chapter.copyKey);
     shell.querySelector("#vs-progress").style.transform =
       `scaleX(${(state.chapterIndex + 1) / CHAPTERS.length})`;
+    // Render chapter dots
+    const dotsEl = shell.querySelector("#vs-story-dots");
+    if (dotsEl) {
+      dotsEl.innerHTML = CHAPTERS.map((_, i) => {
+        const cls = i < state.chapterIndex ? "is-done" : i === state.chapterIndex ? "is-active" : "";
+        return `<div class="vs-story-dot ${cls}"></div>`;
+      }).join("");
+    }
   }
 
   function showChapter(index) {
@@ -1080,10 +1228,11 @@
     hillshadeLayer.alpha = state.chapterIndex === 1 ? 0.55 : 0.0;
     scene.requestRender();
 
+    resetCountdownDisplay();
     renderChapterText();
     flyTo(chapter.view);
     announce(`${t(chapter.titleKey)}. ${t(chapter.copyKey)}`);
-    scheduleNextChapter();
+    startCountdown();
   }
 
   function setLocale(nextLocale) {
@@ -1116,12 +1265,18 @@
         storyElement.hidden = false;
       }
       if (tourCta) tourCta.classList.add("is-hidden");
+      // Auto-play when opened (user intent to start tour)
+      state.playing = true;
+      updatePlayButton();
       showChapter(state.chapterIndex);
       if (focusControl) {
         playButton.focus();
       }
     } else {
       stopTimer();
+      resetCountdownDisplay();
+      state.playing = false;
+      updatePlayButton();
       if (
         typeof storyElement.hidePopover === "function" &&
         storyElement.matches(":popover-open")
@@ -1159,10 +1314,14 @@
   });
 
   shell.querySelector("#vs-previous").addEventListener("click", () => {
+    stopTimer();
+    resetCountdownDisplay();
     showChapter(state.chapterIndex - 1);
   });
 
   shell.querySelector("#vs-next").addEventListener("click", () => {
+    stopTimer();
+    resetCountdownDisplay();
     showChapter(state.chapterIndex + 1);
   });
 
@@ -1170,20 +1329,12 @@
     state.playing = !state.playing;
     updatePlayButton();
     if (state.playing) {
-      scheduleNextChapter();
+      startCountdown();
     } else {
       stopTimer();
+      resetCountdownDisplay();
     }
     announce(t(state.playing ? "tourResumed" : "tourPaused"));
-  });
-
-  shell.querySelector("#vs-restart").addEventListener("click", () => {
-    state.playing = !prefersReducedMotion;
-    updatePlayButton();
-    showChapter(0);
-    announce(
-      t(prefersReducedMotion ? "tourRestartedReduced" : "tourRestarted"),
-    );
   });
 
   shell.querySelector("#vs-language").addEventListener("change", (event) => {
