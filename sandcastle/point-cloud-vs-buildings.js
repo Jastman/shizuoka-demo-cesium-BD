@@ -25,14 +25,14 @@
   const COPY = {
     en: {
       languageLabel: "Language",
-      title: "Shizuoka Prefecture — from peak to floodplain",
+      title: "Atami, Shizuoka — LiDAR from coast to ridge",
       lede:
-        "Explore Shizuoka's geography through Virtual Shizuoka's airborne LiDAR survey: from Mt. Fuji's forested flanks to the Abe River delta and Suruga Bay.",
+        "Explore Atami's dramatic geography through Virtual Shizuoka's airborne LiDAR survey: from the tightly packed coastal city to the steep volcanic ridges where the 2021 landslide began.",
       viewsTitle: "Geographic chapter",
-      viewRegional: "Fuji to Shizuoka",
+      viewRegional: "Atami overview",
       viewFuji: "Mt. Fuji foothills",
-      viewEast: "Shizuoka East",
-      viewUrban: "Shizuoka urban",
+      viewEast: "Atami East",
+      viewUrban: "Atami urban core",
       layersTitle: "Comparison layers",
       layerBuildings: "Buildings context",
       layerBoth: "LiDAR + buildings",
@@ -93,18 +93,18 @@
       next: "Next",
       openTour: "Open story tour",
       chapterStep: (current, total) => `Chapter ${current} of ${total}`,
-      chapter1Title: "Shizuoka: where mountains meet the sea",
+      chapter1Title: "Atami: a city built where sea meets volcano",
       chapter1Copy:
-        "Mt. Fuji anchors the northern skyline. Its flanks drain southwest into the Abe River valley, which fans out across a coastal plain before meeting Suruga Bay — one of Japan's deepest bays. This geography shapes everything: the city grew on alluvial floodplain, bounded by steep volcanic ridges and an active coastline.",
-      chapter2Title: "A city of 700,000 built on a delta",
+        "Atami occupies one of Japan's most compressed geographies — a dense coastal city squeezed between Sagami Bay and the steep flanks of the Izu volcanic arc. Virtual Shizuoka's 2019 airborne LiDAR survey captures every rooftop, ridge, and ravine at centimetre precision. From this overview, the constraint is immediate: nowhere to grow but up the hillside.",
+      chapter2Title: "Reading the terrain: RRIM reveals the risk",
       chapter2Copy:
-        "The Red Relief Image Map (RRIM) exposes what satellite photos hide: flat alluvial plains and reclaimed coastline appear pale, while the volcanic ridges and river embankments flare deep red. The hard seam where Shizuoka's urban grid meets steep terrain is instantly readable — the same boundary that shapes flood risk, growth limits, and evacuation routes.",
-      chapter3Title: "Classified point cloud: reading the city layer by layer",
+        "The Red Relief Image Map (RRIM), derived from the GSI 5m DEM, strips away imagery to expose raw slope. Flat reclaimed land along the shore appears pale; the volcanic ridges above Atami flare deep red. The transition zone — where the urban grid climbs into steep terrain — is exactly where unstable hillside soils and dense building stock collide.",
+      chapter3Title: "Classified point cloud: reading Atami layer by layer",
       chapter3Copy:
-        "The LiDAR survey classifies every return: ground (tan), low vegetation (lime), high vegetation (green), buildings (orange), and water (blue). Toggle 'LiDAR only' to strip the city to its bare terrain, or 'LiDAR + buildings' to compare measured canopy against modeled building footprints.",
-      chapter4Title: "Urban edge meets the first ridge",
+        "The LiDAR survey classifies every return: ground (tan), low vegetation (lime), high vegetation (green), buildings (orange), and water (blue). In Atami the building class reveals multi-storey concrete blocks stacked up the hillside. Toggle 'LiDAR only' to strip the city to its bare ground surface, or 'LiDAR + buildings' to compare the measured point cloud against the modelled building footprints.",
+      chapter4Title: "The hillside edge — where the 2021 landslide began",
       chapter4Copy:
-        "At the northern fringe of Shizuoka city, the LiDAR survey reveals the exact line where flat reclaimed land ends and the first volcanic slopes begin. Classified returns distinguish tree canopy on the hillside from building rooftops on the plain — a boundary that defines flood risk, development limits, and evacuation corridors.",
+        "This ridge above central Atami is the origin zone of the July 2021 debris flow that killed 20 people and destroyed 130 buildings. The 2019 LiDAR (pre-disaster) shows the dense vegetation and steep ravine profile that channelled the flow. Comparing this pre-event scan against the 2020 epoch in Demo 4 reveals exactly what changed — and what remained at risk.",
       viewSelected: (label) => `${label} view selected.`,
       pointNeedsAsset:
         "Virtual Shizuoka point-cloud controls require a configured ion asset ID.",
@@ -128,14 +128,14 @@
     },
     ja: {
       languageLabel: "言語",
-      title: "静岡県：山頂から沖積平野へ",
+      title: "熱海市、静岡県 — 海岸から山稜までのLiDAR",
       lede:
-        "VIRTUAL SHIZUOKAの航空LiDAR測量で静岡の地理を探索します。富士山の森林斜面から安倍川デルタ、駿河湾まで。",
+        "VIRTUAL SHIZUOKAの2019年航空LiDAR測量で熱海の地形を探索します。密集した海岸都市から、2021年土石流が発生した急峻な火山性山稜まで。",
       viewsTitle: "地域チャプター",
-      viewRegional: "富士山から静岡へ",
+      viewRegional: "熱海全景",
       viewFuji: "富士山麓",
-      viewEast: "静岡県東部",
-      viewUrban: "静岡市街",
+      viewEast: "熱海東部",
+      viewUrban: "熱海中心市街",
       layersTitle: "比較レイヤー",
       layerBuildings: "建物コンテキスト",
       layerBoth: "LiDAR + 建物",
@@ -196,18 +196,18 @@
       next: "次へ",
       openTour: "ストーリーツアーを開く",
       chapterStep: (current, total) => `チャプター ${current} / ${total}`,
-      chapter1Title: "静岡：山と海が出会う場所",
+      chapter1Title: "熱海：海と火山が出会う都市",
       chapter1Copy:
-        "富士山が北の空を占め、その山腹から安倍川が南西に向かって流れ、海岸平野へと広がり、駿河湾に注ぎます。駿河湾は日本最深の湾のひとつです。この地形が静岡のすべてを形づくっています。市街地は沖積三角州の上に発達し、急峻な火山性の尾根と活発な海岸線に囲まれています。",
-      chapter2Title: "沖積デルタに広がる70万人の都市",
+        "熱海は相模湾と伊豆火山弧の急斜面に挟まれた、日本でも屈指の制約された地形の都市です。VIRTUAL SHIZUOKAの2019年航空LiDAR測量は、すべての屋根・尾根・渓谷をセンチメートル精度で記録しています。この俯瞰から、都市の制約が一目で分かります。拡張できる方向は急斜面しかありません。",
+      chapter2Title: "地形を読む：RRIMがリスクを明示",
       chapter2Copy:
-        "赤色立体地図（RRIM）は衛星写真では分からない地形を可視化します。沖積平野や埋立地は白く表れ、火山性山稜・河川堤防は濃い赤で際立ちます。市街地グリッドが急峻な地形と接する境界線が一目で分かり、それは洪水リスク・市街地拡張限界・避難経路を規定する境界でもあります。",
-      chapter3Title: "分類済み点群：レイヤーで読む都市",
+        "国土地理院5mDEMから生成した赤色立体地図（RRIM）は、衛星写真では見えない傾斜を浮き彫りにします。海岸の埋立地は淡く、熱海上部の火山性山稜は深い赤で際立ちます。市街地グリッドが急峻な地形へ移行するゾーン、それが不安定な斜面土壌と密集建物が交差する場所です。",
+      chapter3Title: "分類済み点群：熱海をレイヤーで読む",
       chapter3Copy:
-        "LiDAR測量はすべての反射を分類します。地盤（タン）、低植生（黄緑）、高植生（緑）、建物（オレンジ）、水面（青）。レイヤーを切り替えて、地形だけに絞った都市の姿や、樹木の樹冠とモデル化された建物フットプリントを比較してください。",
-      chapter4Title: "市街地の縁、最初の山脚との接線",
+        "LiDAR測量はすべての反射を分類します。地盤（タン）、低植生（黄緑）、高植生（緑）、建物（オレンジ）、水面（青）。熱海では建物クラスが急斜面に積み上がる多階鉄筋コンクリートブロックを示しています。「LiDARのみ」に切り替えて地形だけの都市を確認するか、「LiDAR + 建物」で計測済み点群とモデル化建物フットプリントを比較してください。",
+      chapter4Title: "山腹の縁 — 2021年土石流の発生源",
       chapter4Copy:
-        "静岡市北部の端りでは、LiDARデータが平坦な埋立地と火山性斜面の始まりを高精度で表現しています。樹木の樹冠と平地の屋根を分類し、洪水リスク・市街地拡張限界・避難路を規定する境界線を明確に示しています。",
+        "熱海中心部上部のこの山稜は、2021年7月に20人が死亡し130棟が倒壊した土石流の発生源です。2019年LiDAR（災害前）には、流れを誘導した密な植生と急峻な谷形状が記録されています。このプレイベントスキャンをデモ4の2020年エポックと比較することで、何が変わり、何がリスクとして残っているかが正確に分かります。",
       viewSelected: (label) => `${label}ビューを選択しました。`,
       pointNeedsAsset:
         "VIRTUAL SHIZUOKA点群の操作にはionアセットIDの設定が必要です。",
@@ -1018,13 +1018,37 @@
   );
   const rrimToggle = shell.querySelector("#vs-rrim-toggle");
 
+  // All views centered on Atami (139.07°E, 35.10°N) — where asset 5126337 LiDAR data lives
   const VIEWS = {
+    // Ch1: wide overview — Atami bay + coastal ridge visible
     regional: {
-      target: Cesium.Cartesian3.fromDegrees(138.55, 35.08, 2500),
-      heading: Cesium.Math.toRadians(18),
-      pitch: Cesium.Math.toRadians(-28),
-      range: 118000,
+      target: Cesium.Cartesian3.fromDegrees(139.073, 35.097, 200),
+      heading: Cesium.Math.toRadians(355),
+      pitch: Cesium.Math.toRadians(-30),
+      range: 14000,
     },
+    // Ch2: RRIM hillshade — steep volcanic slopes above Atami city
+    rrim: {
+      target: Cesium.Cartesian3.fromDegrees(139.075, 35.105, 100),
+      heading: Cesium.Math.toRadians(10),
+      pitch: Cesium.Math.toRadians(-50),
+      range: 9000,
+    },
+    // Ch3: urban density — Atami city core, point cloud classification visible
+    urban: {
+      target: Cesium.Cartesian3.fromDegrees(139.0728, 35.0976, 60),
+      heading: Cesium.Math.toRadians(200),
+      pitch: Cesium.Math.toRadians(-22),
+      range: 3200,
+    },
+    // Ch4: hillside edge — where Atami's dense urban fabric meets the steep ridge (landslide zone)
+    foothills: {
+      target: Cesium.Cartesian3.fromDegrees(139.082, 35.108, 120),
+      heading: Cesium.Math.toRadians(255),
+      pitch: Cesium.Math.toRadians(-18),
+      range: 2400,
+    },
+    // Button views
     fuji: {
       target: Cesium.Cartesian3.fromDegrees(138.7274, 35.3606, 3776),
       heading: Cesium.Math.toRadians(205),
@@ -1032,28 +1056,10 @@
       range: 42000,
     },
     east: {
-      target: Cesium.Cartesian3.fromDegrees(138.75, 35.12, 900),
-      heading: Cesium.Math.toRadians(32),
-      pitch: Cesium.Math.toRadians(-27),
-      range: 47000,
-    },
-    urban: {
-      target: Cesium.Cartesian3.fromDegrees(138.3831, 34.9756, 80),
-      heading: Cesium.Math.toRadians(188),
-      pitch: Cesium.Math.toRadians(-24),
-      range: 12500,
-    },
-    rrim: {
-      target: Cesium.Cartesian3.fromDegrees(138.39, 35.02, 100),
-      heading: Cesium.Math.toRadians(0),
-      pitch: Cesium.Math.toRadians(-55),
-      range: 28000,
-    },
-    foothills: {
-      target: Cesium.Cartesian3.fromDegrees(138.40, 35.05, 200),
-      heading: Cesium.Math.toRadians(350),
-      pitch: Cesium.Math.toRadians(-22),
-      range: 8000,
+      target: Cesium.Cartesian3.fromDegrees(139.073, 35.097, 200),
+      heading: Cesium.Math.toRadians(355),
+      pitch: Cesium.Math.toRadians(-30),
+      range: 14000,
     },
   };
 
@@ -1286,14 +1292,15 @@
     }
 
     // Chapter 2 (index 1): RRIM + slope overlay
-    if (state.chapterIndex === 1) {
+    // Chapter 4 (index 3): also show RRIM to highlight landslide-risk terrain
+    if (state.chapterIndex === 1 || state.chapterIndex === 3) {
       rrimLayer.alpha = 0.82;
       slopeLayer.alpha = 0.25;
     } else {
       rrimLayer.alpha = state.rrimManual ? 0.82 : 0.0;
       slopeLayer.alpha = state.rrimManual ? 0.25 : 0.0;
     }
-    if (rrimToggle) rrimToggle.checked = state.chapterIndex === 1 || state.rrimManual;
+    if (rrimToggle) rrimToggle.checked = state.chapterIndex === 1 || state.chapterIndex === 3 || state.rrimManual;
 
     // Chapter 3 & 4: make sure point cloud is visible to tell the LiDAR story
     if (state.chapterIndex >= 2 && state.pointCloud) {
