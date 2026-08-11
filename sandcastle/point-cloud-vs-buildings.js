@@ -339,7 +339,7 @@
     .vs-panel {
       position: absolute;
       top: 14px;
-      right: 14px;
+      left: 14px;
       width: min(390px, calc(100vw - 28px));
       max-height: calc(100vh - 66px);
       overflow: auto;
@@ -365,19 +365,30 @@
     }
 
     .vs-open-story {
-      position: absolute;
-      left: 14px;
-      bottom: 42px;
       display: none;
-      border-radius: 999px;
-      padding: 10px 14px;
-      color: var(--vs-text);
-      font-weight: 750;
     }
 
-    .vs-open-story.is-visible {
-      display: inline-flex;
+    .vs-tour-cta {
+      display: block;
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: var(--vs-accent);
+      color: #0a1628;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      transition: background 120ms, transform 80ms;
     }
+
+    .vs-tour-cta:hover { background: var(--vs-accent-strong); }
+    .vs-tour-cta:active { transform: scale(0.98); }
+    .vs-tour-cta:focus-visible { outline: 3px solid var(--vs-accent-strong); outline-offset: 2px; }
+    .vs-tour-cta.is-hidden { display: none; }
 
     .vs-eyebrow {
       margin: 0 0 5px;
@@ -662,7 +673,7 @@
     @media (max-width: 760px) {
       .vs-panel {
         top: 8px;
-        right: 8px;
+        left: 8px;
         width: min(350px, calc(100vw - 16px));
         max-height: 52vh;
       }
@@ -670,11 +681,6 @@
       .vs-story {
         inset: auto 8px 38px 8px;
         width: auto;
-      }
-
-      .vs-open-story {
-        left: 8px;
-        bottom: 38px;
       }
     }
 
@@ -844,6 +850,7 @@
           </p>
         </div>
       </details>
+      <button class="vs-tour-cta" id="vs-open-story" type="button" data-i18n="openTour">${t("openTour")}</button>
     </main>
 
     <section
@@ -869,7 +876,6 @@
       </div>
     </section>
 
-    <button class="vs-open-story" id="vs-open-story" type="button" data-i18n="openTour">${t("openTour")}</button>
     <div class="vs-sr-only" id="vs-announcer" aria-live="polite"></div>
   `;
   viewer.container.appendChild(shell);
@@ -1100,6 +1106,7 @@
 
   function setStoryOpen(open, focusControl) {
     state.storyOpen = open;
+    const tourCta = shell.querySelector("#vs-open-story");
     if (open) {
       if (typeof storyElement.showPopover === "function") {
         if (!storyElement.matches(":popover-open")) {
@@ -1108,7 +1115,7 @@
       } else {
         storyElement.hidden = false;
       }
-      openStoryButton.classList.remove("is-visible");
+      if (tourCta) tourCta.classList.add("is-hidden");
       showChapter(state.chapterIndex);
       if (focusControl) {
         playButton.focus();
@@ -1123,8 +1130,7 @@
       } else {
         storyElement.hidden = true;
       }
-      openStoryButton.classList.add("is-visible");
-      openStoryButton.focus();
+      if (tourCta) tourCta.classList.remove("is-hidden");
     }
   }
 
@@ -1347,33 +1353,35 @@
     name: "Mt. Fuji",
     position: Cesium.Cartesian3.fromDegrees(138.7274, 35.3606, 3776),
     label: {
-      text: "富士山\nMt. Fuji\n3,776 m",
-      font: "bold 14px ui-sans-serif, system-ui, sans-serif",
+      text: "富士山  Mt. Fuji\n3,776 m",
+      font: "bold 16px ui-sans-serif, system-ui, sans-serif",
       fillColor: Cesium.Color.WHITE,
-      outlineColor: Cesium.Color.fromCssColorString("#1a1a2e"),
-      outlineWidth: 3,
+      outlineColor: Cesium.Color.fromCssColorString("#1a2540"),
+      outlineWidth: 4,
       style: Cesium.LabelStyle.FILL_AND_OUTLINE,
       verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-      pixelOffset: new Cesium.Cartesian2(0, -16),
+      pixelOffset: new Cesium.Cartesian2(0, -14),
       heightReference: Cesium.HeightReference.NONE,
       disableDepthTestDistance: Number.POSITIVE_INFINITY,
-      scaleByDistance: new Cesium.NearFarScalar(8000, 1.1, 200000, 0.5),
+      // Visible and prominent at all zoom levels from 5km to 500km
+      scaleByDistance: new Cesium.NearFarScalar(5000, 1.6, 500000, 0.7),
+      translucencyByDistance: new Cesium.NearFarScalar(5000, 1.0, 800000, 0.4),
     },
     point: {
-      pixelSize: 8,
+      pixelSize: 10,
       color: Cesium.Color.fromCssColorString("#e74c3c"),
       outlineColor: Cesium.Color.WHITE,
-      outlineWidth: 2,
+      outlineWidth: 2.5,
       heightReference: Cesium.HeightReference.NONE,
       disableDepthTestDistance: Number.POSITIVE_INFINITY,
-      scaleByDistance: new Cesium.NearFarScalar(8000, 1.2, 200000, 0.6),
+      scaleByDistance: new Cesium.NearFarScalar(5000, 1.6, 500000, 0.8),
     },
   });
 
   updatePlayButton();
   updateLayerButtons();
-  // Tour is user-initiated — do not auto-open
-  openStoryButton.classList.add("is-visible");
+  // Tour is user-initiated — fly to regional overview on load
+  flyTo("regional");
   state.storyOpen = false;
 
   if (prefersReducedMotion) {
