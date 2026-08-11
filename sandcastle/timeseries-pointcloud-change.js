@@ -1,6 +1,6 @@
 // Time-Series Canopy Change — Shizuoka Prefecture
-// Verified context: Japan regional terrain (ion 2767062) and Japan Buildings
-// (ion 2602291). The analytical grid and its 2020–2025 values are illustrative.
+// Verified context: Japan regional terrain (ion 1) and Japan Buildings
+// (ion 96188). The analytical grid and its 2020–2025 values are illustrative.
 
 
 Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1MTA5NjcxZS04ZGIwLTQxMGMtYTgzYy1mOTVkYzQ4ZDNiNzUiLCJpZCI6NDIxMzE4LCJzdWIiOiJKYWtlLlN0ZWluZXJtYW4iLCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoiRGVtbyAxLSBEaXNhc3RlciBSZXNwb25zZSAmIEh5ZHJvZHluYW1pYyBTaW11bGF0aW9uIiwiaWF0IjoxNzg1NDQ1NTkwfQ.f14WW5ROSpSJULiwGF1iWovpqDFbNq-KY5-QJckUDUY";
@@ -61,9 +61,9 @@ const TRANSLATIONS = {
     cameraCity: "Shizuoka city",
     sourceSummary: "Data provenance and limitations",
     sourceTerrain:
-      "Terrain: Cesium ion asset 2767062, Japan regional terrain.",
+      "Terrain: Cesium ion asset 1 (Cesium World Terrain).",
     sourceBuildings:
-      "Buildings: Cesium ion asset 2602291, Japan Buildings 3D Tiles.",
+      "Buildings: Cesium ion asset 96188, OSM Buildings 3D Tiles.",
     sourceCandidate: "LiDAR source:",
     source2019: "Atami LP LiDAR 2019 (Virtual Shizuoka, Cesium Ion asset 5126345)",
     source2021: "Atami LP LiDAR 2020 (Virtual Shizuoka, Cesium Ion asset 5126355)",
@@ -200,9 +200,9 @@ const TRANSLATIONS = {
     cameraCity: "静岡市",
     sourceSummary: "データ出典と制約",
     sourceTerrain:
-      "地形：Cesium ionアセット2767062（日本地域地形）。",
+      "地形：Cesium ionアセット1（Cesium World Terrain）。",
     sourceBuildings:
-      "建物：Cesium ionアセット2602291（Japan Buildings 3D Tiles）。",
+      "建物：Cesium ionアセット96188（OSM Buildings）。",
     sourceCandidate: "LiDARデータ出典：",
     source2019: "熱海LP LiDAR 2019（Virtual Shizuoka、Cesium Ionアセット5126345）",
     source2021: "熱海LP LiDAR 2020（Virtual Shizuoka、Cesium Ionアセット5126355）",
@@ -860,8 +860,8 @@ function injectDemoShell() {
         <details class="change-demo-details">
           <summary data-i18n="sourceSummary">Data provenance and limitations</summary>
           <ul class="change-demo-source-list">
-            <li data-i18n="sourceTerrain">Terrain: Cesium ion asset 2767062, Japan regional terrain.</li>
-            <li data-i18n="sourceBuildings">Buildings: Cesium ion asset 2602291, Japan Buildings 3D Tiles.</li>
+            <li data-i18n="sourceTerrain">Terrain: Cesium ion asset 1 (Cesium World Terrain).</li>
+            <li data-i18n="sourceBuildings">Buildings: Cesium ion asset 96188, OSM Buildings 3D Tiles.</li>
             <li>
               <span data-i18n="sourceCandidate">Public source candidate:</span>
               <a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2019-pointcloud" target="_blank" rel="noopener noreferrer" data-i18n="source2019">Shizuoka 2019 point cloud</a>.
@@ -1177,13 +1177,13 @@ function getColorForCell(cell, mode) {
 // ============================================================================
 
 async function initViewer() {
-  // Use verified Cesium Ion assets: Japan terrain (#2767062)
+  // Use verified Cesium Ion assets: Cesium World Terrain (public)
   // Note: Sandcastle provides its own Cesium.Ion token; do not override
   updateStatus(translate("loadingTerrain"));
   let terrainProvider;
   try {
     terrainProvider =
-      await Cesium.CesiumTerrainProvider.fromIonAssetId(2767062);
+      await Cesium.createWorldTerrainAsync();
   } catch (error) {
     updateStatus(translate("terrainError", { message: error.message }), true);
     throw error;
@@ -1207,9 +1207,9 @@ async function initViewer() {
     translate("mapAria")
   );
 
-  // Load verified Japan Buildings tileset (Ion asset #2602291)
+  // Load verified Japan Buildings tileset (Ion asset #96188)
   try {
-    const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2602291, {
+    const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(96188, {
       maximumScreenSpaceError: 16,
       skipLevelOfDetail: false,
       cullWithChildrenBounds: false,
@@ -1221,7 +1221,7 @@ async function initViewer() {
       maximumCacheOverflowBytes: 256 * 1024 * 1024,
     });
     viewer.scene.primitives.add(tileset);
-    console.info("Japan Buildings (ion asset 2602291) loaded.");
+    console.info("Japan Buildings (ion asset 96188) loaded.");
   } catch (error) {
     console.info(`Optional buildings layer unavailable: ${error.message}`);
   }
