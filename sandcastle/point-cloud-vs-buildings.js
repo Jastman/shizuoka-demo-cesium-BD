@@ -351,44 +351,45 @@
 
     .vs-story {
       position: fixed;
-      /* Bottom-center, above Cesium toolbar */
-      inset: auto 0 52px 0;
+      inset: auto 0 62px 0;
       width: min(560px, calc(100vw - 32px));
       margin: 0 auto;
-      border-radius: 20px;
-      padding: 20px 22px 18px;
+      border-radius: 16px;
+      padding: 22px 22px 16px;
       color: var(--vs-text);
       overflow: visible;
+      /* Crisper shadow: offset Y so it reads as floating above terrain */
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.52), 0 2px 8px rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(180, 203, 226, 0.22);
     }
 
     .vs-story::backdrop {
       background: transparent;
     }
 
-    /* SVG border timer — absolutely positioned over the card */
-    .vs-border-timer {
+    /* Full-width timeline sweep — lives below the card, not inside it */
+    .vs-story-timeline {
       position: absolute;
-      inset: -3px;
-      width: calc(100% + 6px);
-      height: calc(100% + 6px);
-      pointer-events: none;
-      overflow: visible;
+      left: 0;
+      right: 0;
+      bottom: -10px;
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(196, 209, 223, 0.18);
+      overflow: hidden;
     }
 
-    .vs-border-timer-track {
-      fill: none;
-      stroke: rgba(196, 209, 223, 0.15);
-      stroke-width: 3;
+    .vs-story-sweep {
+      height: 100%;
+      width: 100%;
+      background: var(--vs-accent);
+      transform: scaleX(1);
+      transform-origin: left center;
+      /* No CSS transition — JS drives this via requestAnimationFrame */
     }
 
-    .vs-border-timer-arc {
-      fill: none;
-      stroke: var(--vs-accent);
-      stroke-width: 3;
-      stroke-linecap: round;
-      stroke-dashoffset: 0;
-      /* dasharray set dynamically by JS after layout */
-    }
+    /* SVG border timer removed — using timeline bar instead */
+    .vs-border-timer { display: none; }
 
     .vs-open-story {
       display: none;
@@ -429,29 +430,124 @@
     .vs-tour-cta:focus-visible { outline: 3px solid #ffffff; outline-offset: 3px; }
     .vs-tour-cta.is-hidden { display: none; }
 
-    /* Story header: just the step counter */
-    .vs-story-header {
+    .vs-story-title {
+      margin: 0 40px 8px 0;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+    }
+
+    .vs-story-copy {
+      margin: 0 0 16px;
+      color: var(--vs-muted);
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    /* Nav row: ← dots play/pause → */
+    .vs-story-nav {
+      display: grid;
+      grid-template-columns: 44px 1fr 80px 44px;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vs-nav-btn {
+      min-height: 44px;
+      width: 44px;
       display: flex;
       align-items: center;
-      margin: 0 0 6px;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid rgba(180, 203, 226, 0.28);
+      background: rgba(21, 33, 52, 0.7);
+      color: var(--vs-text);
+      font-size: 18px;
+      cursor: pointer;
+      transition: background 120ms, border-color 120ms;
     }
 
-    .vs-eyebrow {
-      margin: 0 0 5px;
-      color: var(--vs-accent-strong);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+    .vs-nav-btn:hover {
+      background: rgba(37, 61, 76, 0.94);
+      border-color: rgba(139, 229, 222, 0.5);
     }
 
-    .vs-title {
-      margin: 0;
-      max-width: 30ch;
-      font-size: clamp(18px, 2.2vw, 25px);
-      line-height: 1.12;
-      letter-spacing: -0.02em;
+    .vs-nav-btn:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 2px;
     }
+
+    .vs-story-dots {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .vs-story-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(196, 209, 223, 0.3);
+      cursor: pointer;
+      transition: background 200ms, transform 220ms;
+    }
+
+    .vs-story-dot:hover { background: rgba(196, 209, 223, 0.6); }
+    .vs-story-dot.is-active {
+      background: var(--vs-accent);
+      transform: scale(1.5);
+    }
+    .vs-story-dot.is-done { background: rgba(84, 210, 199, 0.4); }
+
+    /* Pause/resume pill */
+    .vs-play-btn {
+      min-height: 44px;
+      border-radius: 10px;
+      border: 1px solid rgba(180, 203, 226, 0.28);
+      background: rgba(21, 33, 52, 0.7);
+      color: var(--vs-muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background 120ms, color 120ms, border-color 120ms;
+    }
+
+    .vs-play-btn:hover {
+      background: rgba(37, 61, 76, 0.94);
+      color: var(--vs-text);
+      border-color: rgba(139, 229, 222, 0.5);
+    }
+
+    .vs-play-btn:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 2px;
+    }
+
+    /* Close button — top right */
+    .vs-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 18px;
+      opacity: 0.55;
+      border: none;
+      background: transparent;
+      color: var(--vs-text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 120ms, background 120ms;
+    }
+
+    .vs-close:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+    .vs-close:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; opacity: 1; }
 
     .vs-language {
       display: flex;
@@ -480,32 +576,7 @@
       font-size: 13px;
     }
 
-    .vs-story-title {
-      margin: 0 0 6px;
-      font-size: 20px;
-      line-height: 1.2;
-      font-weight: 800;
-    }
-
-    .vs-story-copy {
-      margin: 0 0 14px;
-      color: var(--vs-muted);
-      font-size: 13.5px;
-      line-height: 1.55;
-    }
-
-    .vs-close {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      font-size: 18px;
-      opacity: 0.7;
-    }
-
-    .vs-close:hover { opacity: 1; }
+    /* Duplicate story-title/copy/close from prior version — overridden above; kept for specificity */
 
     .vs-section {
       padding-top: 14px;
@@ -566,41 +637,7 @@
       opacity: 0.5;
     }
 
-    .vs-story-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .vs-story-actions .vs-button {
-      text-align: center;
-      flex: 1;
-    }
-
-    .vs-story-dots {
-      display: flex;
-      gap: 5px;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
-    }
-
-    .vs-story-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: rgba(196, 209, 223, 0.35);
-      transition: background 200ms, transform 200ms;
-    }
-
-    .vs-story-dot.is-active {
-      background: var(--vs-accent);
-      transform: scale(1.4);
-    }
-
-    .vs-story-dot.is-done {
-      background: rgba(84, 210, 199, 0.45);
-    }
+    /* Old story-actions / dots removed — replaced by .vs-story-nav above */
 
     .vs-status-list {
       display: grid;
@@ -718,21 +755,7 @@
       text-underline-offset: 3px;
     }
 
-    .vs-progress {
-      height: 3px;
-      margin: 0 0 12px;
-      overflow: hidden;
-      border-radius: 999px;
-      background: rgba(196, 209, 223, 0.2);
-    }
-
-    .vs-progress-bar {
-      height: 100%;
-      background: var(--vs-accent);
-      transform: scaleX(0);
-      transform-origin: left center;
-      transition: transform 240ms ease;
-    }
+    /* .vs-progress / .vs-progress-bar removed — replaced by .vs-story-timeline sweep */
 
     .vs-sr-only {
       position: absolute;
@@ -757,14 +780,18 @@
       .vs-story {
         inset: auto 8px 38px 8px;
         width: auto;
-        border-radius: 16px;
+        border-radius: 14px;
+      }
+
+      .vs-story-nav {
+        grid-template-columns: 40px 1fr 68px 40px;
       }
     }
 
     @media (max-width: 480px) {
       .vs-panel,
       .vs-story {
-        max-height: 40vh;
+        max-height: 44vh;
         overflow: auto;
       }
 
@@ -772,18 +799,9 @@
         grid-template-columns: 1fr;
       }
 
-      .vs-story-actions {
-        grid-template-columns: 1fr 1fr;
-      }
-
       .vs-story-copy {
         min-height: 0;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .vs-progress-bar {
-        transition: none;
+        font-size: 13px;
       }
     }
   `;
@@ -938,28 +956,21 @@
       aria-labelledby="vs-story-title"
       aria-describedby="vs-story-copy"
     >
-      <svg class="vs-border-timer" id="vs-border-timer" aria-hidden="true">
-        <rect class="vs-border-timer-track" id="vs-border-track" rx="20" ry="20"/>
-        <rect class="vs-border-timer-arc" id="vs-border-arc" rx="20" ry="20"/>
-      </svg>
-      <button class="vs-button vs-close" id="vs-close" type="button" aria-label="${t("closeTour")}" data-i18n-aria-label="closeTour">×</button>
-
-      <div class="vs-story-header">
-        <p class="vs-eyebrow" id="vs-story-step"></p>
-      </div>
+      <button class="vs-close" id="vs-close" type="button" aria-label="${t("closeTour")}" data-i18n-aria-label="closeTour">×</button>
 
       <h2 class="vs-story-title" id="vs-story-title"></h2>
       <p class="vs-story-copy" id="vs-story-copy"></p>
 
-      <div class="vs-progress" aria-hidden="true">
-        <div class="vs-progress-bar" id="vs-progress"></div>
-      </div>
-
-      <div class="vs-story-actions">
-        <button class="vs-button" id="vs-previous" type="button" data-i18n="previous">${t("previous")}</button>
+      <nav class="vs-story-nav" aria-label="Tour navigation">
+        <button class="vs-nav-btn" id="vs-previous" type="button" aria-label="${t("previous")}">←</button>
         <div class="vs-story-dots" id="vs-story-dots" aria-hidden="true"></div>
-        <button class="vs-button" id="vs-play" type="button">${t("pause")}</button>
-        <button class="vs-button" id="vs-next" type="button" data-i18n="next">${t("next")}</button>
+        <button class="vs-play-btn" id="vs-play" type="button">${t("pause")}</button>
+        <button class="vs-nav-btn" id="vs-next" type="button" aria-label="${t("next")}">→</button>
+      </nav>
+
+      <!-- Timeline sweep: full-width bar below the card -->
+      <div class="vs-story-timeline" aria-hidden="true">
+        <div class="vs-story-sweep" id="vs-sweep"></div>
       </div>
     </section>
 
@@ -1131,41 +1142,14 @@
     raf: null,
     startTs: null,       // timestamp when current play segment began
     elapsedMs: 0,        // accumulated ms before current segment
-    perimeter: 0,        // set after first layout
   };
 
-  function getBorderPerimeter() {
-    // Measure rect on first call; card width may change on resize but close enough
-    if (borderTimer.perimeter > 0) return borderTimer.perimeter;
-    const rect = storyElement.getBoundingClientRect();
-    const r = 20; // border-radius
-    const w = rect.width + 6; // +6 for the -3px inset expansion
-    const h = rect.height + 6;
-    borderTimer.perimeter = 2 * (w - 2 * r) + 2 * (h - 2 * r) + 2 * Math.PI * r;
-    // Size the SVG rects now that we know dimensions
-    const svgEl = shell.querySelector("#vs-border-timer");
-    const trackEl = shell.querySelector("#vs-border-track");
-    const arcEl = shell.querySelector("#vs-border-arc");
-    if (svgEl && trackEl && arcEl) {
-      const setRect = (el) => {
-        el.setAttribute("x", "1.5");
-        el.setAttribute("y", "1.5");
-        el.setAttribute("width", String(w - 3));
-        el.setAttribute("height", String(h - 3));
-      };
-      setRect(trackEl);
-      setRect(arcEl);
-      arcEl.style.strokeDasharray = String(borderTimer.perimeter);
+  function setSweepProgress(fraction) {
+    const sweep = shell.querySelector("#vs-sweep");
+    if (sweep) {
+      // scaleX(1) = full bar, scaleX(0) = completely swept
+      sweep.style.transform = `scaleX(${Math.max(0, Math.min(1, fraction))})`;
     }
-    return borderTimer.perimeter;
-  }
-
-  function setBorderProgress(fraction) {
-    const arcEl = shell.querySelector("#vs-border-arc");
-    if (!arcEl) return;
-    const p = getBorderPerimeter();
-    // fraction 1 = full border visible, 0 = border fully drained
-    arcEl.style.strokeDashoffset = String(p * (1 - fraction));
   }
 
   function stopTimer() {
@@ -1188,7 +1172,7 @@
     const now = performance.now();
     const totalElapsed = borderTimer.elapsedMs + (now - borderTimer.startTs);
     const fraction = Math.max(0, 1 - totalElapsed / CHAPTER_DURATION_MS);
-    setBorderProgress(fraction);
+    setSweepProgress(fraction);
 
     if (totalElapsed >= CHAPTER_DURATION_MS) {
       borderTimer.elapsedMs = 0;
@@ -1202,8 +1186,6 @@
   function startCountdown() {
     stopTimer();
     if (!state.playing || !state.storyOpen) return;
-    // Measure perimeter on first play (element must be visible)
-    getBorderPerimeter();
     borderTimer.startTs = performance.now();
     borderTimer.raf = window.requestAnimationFrame(tickBorderTimer);
   }
@@ -1211,7 +1193,7 @@
   function resetCountdownDisplay() {
     borderTimer.elapsedMs = 0;
     borderTimer.startTs = null;
-    setBorderProgress(1);
+    setSweepProgress(1);
   }
 
   function updatePlayButton() {
@@ -1221,21 +1203,14 @@
 
   function renderChapterText() {
     const chapter = CHAPTERS[state.chapterIndex];
-    shell.querySelector("#vs-story-step").textContent = t(
-      "chapterStep",
-      state.chapterIndex + 1,
-      CHAPTERS.length,
-    );
     shell.querySelector("#vs-story-title").textContent = t(chapter.titleKey);
     shell.querySelector("#vs-story-copy").textContent = t(chapter.copyKey);
-    shell.querySelector("#vs-progress").style.transform =
-      `scaleX(${(state.chapterIndex + 1) / CHAPTERS.length})`;
     // Render chapter dots
     const dotsEl = shell.querySelector("#vs-story-dots");
     if (dotsEl) {
       dotsEl.innerHTML = CHAPTERS.map((_, i) => {
         const cls = i < state.chapterIndex ? "is-done" : i === state.chapterIndex ? "is-active" : "";
-        return `<div class="vs-story-dot ${cls}"></div>`;
+        return `<div class="vs-story-dot ${cls}" title="${i + 1} of ${CHAPTERS.length}"></div>`;
       }).join("");
     }
   }
