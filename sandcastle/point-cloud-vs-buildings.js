@@ -358,37 +358,36 @@
       border-radius: 20px;
       padding: 20px 22px 18px;
       color: var(--vs-text);
-      /* Border timer via conic-gradient pseudo-element */
-      --vs-timer-progress: 1;
-    }
-
-    /* Animated border: conic-gradient drains clockwise as --vs-timer-progress goes 1→0 */
-    .vs-story::before {
-      content: "";
-      position: absolute;
-      inset: -2px;
-      border-radius: 22px;
-      background: conic-gradient(
-        var(--vs-accent) calc(var(--vs-timer-progress) * 360deg),
-        rgba(196, 209, 223, 0.15) calc(var(--vs-timer-progress) * 360deg)
-      );
-      z-index: -1;
-      pointer-events: none;
-    }
-
-    /* Inner mask to show only the border ring, not fill */
-    .vs-story::after {
-      content: "";
-      position: absolute;
-      inset: 2px;
-      border-radius: 18px;
-      background: var(--vs-bg);
-      z-index: -1;
-      pointer-events: none;
+      overflow: visible;
     }
 
     .vs-story::backdrop {
       background: transparent;
+    }
+
+    /* SVG border timer — absolutely positioned over the card */
+    .vs-border-timer {
+      position: absolute;
+      inset: -3px;
+      width: calc(100% + 6px);
+      height: calc(100% + 6px);
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .vs-border-timer-track {
+      fill: none;
+      stroke: rgba(196, 209, 223, 0.15);
+      stroke-width: 3;
+    }
+
+    .vs-border-timer-arc {
+      fill: none;
+      stroke: var(--vs-accent);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dashoffset: 0;
+      /* dasharray set dynamically by JS after layout */
     }
 
     .vs-open-story {
@@ -939,6 +938,10 @@
       aria-labelledby="vs-story-title"
       aria-describedby="vs-story-copy"
     >
+      <svg class="vs-border-timer" id="vs-border-timer" aria-hidden="true">
+        <rect class="vs-border-timer-track" id="vs-border-track" rx="20" ry="20"/>
+        <rect class="vs-border-timer-arc" id="vs-border-arc" rx="20" ry="20"/>
+      </svg>
       <button class="vs-button vs-close" id="vs-close" type="button" aria-label="${t("closeTour")}" data-i18n-aria-label="closeTour">×</button>
 
       <div class="vs-story-header">
@@ -1033,7 +1036,6 @@
     playing: false,
     storyOpen: false,
     timer: null,
-    countdownInterval: null,
   };
 
   function flyTo(viewName) {
@@ -1124,41 +1126,92 @@
 
   const CHAPTER_DURATION_MS = 30000;
 
+  // Border timer state — persists across pause/resume
+  const borderTimer = {
+    raf: null,
+    startTs: null,       // timestamp when current play segment began
+    elapsedMs: 0,        // accumulated ms before current segment
+    perimeter: 0,        // set after first layout
+  };
+
+  function getBorderPerimeter() {
+    // Measure rect on first call; card width may change on resize but close enough
+    if (borderTimer.perimeter > 0) return borderTimer.perimeter;
+    const rect = storyElement.getBoundingClientRect();
+    const r = 20; // border-radius
+    const w = rect.width + 6; // +6 for the -3px inset expansion
+    const h = rect.height + 6;
+    borderTimer.perimeter = 2 * (w - 2 * r) + 2 * (h - 2 * r) + 2 * Math.PI * r;
+    // Size the SVG rects now that we know dimensions
+    const svgEl = shell.querySelector("#vs-border-timer");
+    const trackEl = shell.querySelector("#vs-border-track");
+    const arcEl = shell.querySelector("#vs-border-arc");
+    if (svgEl && trackEl && arcEl) {
+      const setRect = (el) => {
+        el.setAttribute("x", "1.5");
+        el.setAttribute("y", "1.5");
+        el.setAttribute("width", String(w - 3));
+        el.setAttribute("height", String(h - 3));
+      };
+      setRect(trackEl);
+      setRect(arcEl);
+      arcEl.style.strokeDasharray = String(borderTimer.perimeter);
+    }
+    return borderTimer.perimeter;
+  }
+
+  function setBorderProgress(fraction) {
+    const arcEl = shell.querySelector("#vs-border-arc");
+    if (!arcEl) return;
+    const p = getBorderPerimeter();
+    // fraction 1 = full border visible, 0 = border fully drained
+    arcEl.style.strokeDashoffset = String(p * (1 - fraction));
+  }
+
   function stopTimer() {
     if (state.timer !== null) {
-      window.clearTimeout(state.timer);
+      window.cancelAnimationFrame(state.timer);
       state.timer = null;
     }
-    if (state.countdownInterval !== null) {
-      window.clearInterval(state.countdownInterval);
-      state.countdownInterval = null;
+    if (borderTimer.raf !== null) {
+      window.cancelAnimationFrame(borderTimer.raf);
+      borderTimer.raf = null;
+    }
+    // Accumulate elapsed time so resume can continue from here
+    if (borderTimer.startTs !== null) {
+      borderTimer.elapsedMs += performance.now() - borderTimer.startTs;
+      borderTimer.startTs = null;
+    }
+  }
+
+  function tickBorderTimer() {
+    const now = performance.now();
+    const totalElapsed = borderTimer.elapsedMs + (now - borderTimer.startTs);
+    const fraction = Math.max(0, 1 - totalElapsed / CHAPTER_DURATION_MS);
+    setBorderProgress(fraction);
+
+    if (totalElapsed >= CHAPTER_DURATION_MS) {
+      borderTimer.elapsedMs = 0;
+      borderTimer.startTs = null;
+      showChapter((state.chapterIndex + 1) % CHAPTERS.length);
+    } else {
+      borderTimer.raf = window.requestAnimationFrame(tickBorderTimer);
     }
   }
 
   function startCountdown() {
     stopTimer();
     if (!state.playing || !state.storyOpen) return;
-
-    const totalSeconds = CHAPTER_DURATION_MS / 1000;
-    let secondsLeft = totalSeconds;
-
-    function tick() {
-      const progress = secondsLeft / totalSeconds;
-      storyElement.style.setProperty("--vs-timer-progress", String(progress));
-      secondsLeft--;
-    }
-    tick();
-    state.countdownInterval = window.setInterval(tick, 1000);
-
-    state.timer = window.setTimeout(() => {
-      window.clearInterval(state.countdownInterval);
-      state.countdownInterval = null;
-      showChapter((state.chapterIndex + 1) % CHAPTERS.length);
-    }, CHAPTER_DURATION_MS);
+    // Measure perimeter on first play (element must be visible)
+    getBorderPerimeter();
+    borderTimer.startTs = performance.now();
+    borderTimer.raf = window.requestAnimationFrame(tickBorderTimer);
   }
 
   function resetCountdownDisplay() {
-    storyElement.style.setProperty("--vs-timer-progress", "1");
+    borderTimer.elapsedMs = 0;
+    borderTimer.startTs = null;
+    setBorderProgress(1);
   }
 
   function updatePlayButton() {
