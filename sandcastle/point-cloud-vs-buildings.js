@@ -4,8 +4,8 @@
 
   Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1MTA5NjcxZS04ZGIwLTQxMGMtYTgzYy1mOTVkYzQ4ZDNiNzUiLCJpZCI6NDIxMzE4LCJzdWIiOiJKYWtlLlN0ZWluZXJtYW4iLCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoiRGVtbyAxLSBEaXNhc3RlciBSZXNwb25zZSAmIEh5ZHJvZHluYW1pYyBTaW11bGF0aW9uIiwiaWF0IjoxNzg1NDQ1NTkwfQ.f14WW5ROSpSJULiwGF1iWovpqDFbNq-KY5-QJckUDUY";
 
-  const JAPAN_TERRAIN_ASSET_ID = 2767062;
-  const JAPAN_BUILDINGS_ASSET_ID = 2602291;
+  const JAPAN_TERRAIN_ASSET_ID = 1;       // Cesium World Terrain (public Ion asset)
+  const JAPAN_BUILDINGS_ASSET_ID = 96188; // Cesium OSM Buildings worldwide (public Ion asset)
 
   // Atami LP LiDAR 2019 — real Virtual Shizuoka data, tiles 08NF2350–2353
   // Uploaded to Ion from virtual-shizuoka.s3.ap-northeast-1.amazonaws.com/2019/LP/Ground/...
