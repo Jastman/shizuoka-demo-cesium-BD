@@ -25,9 +25,9 @@
   const COPY = {
     en: {
       languageLabel: "Language",
-      title: "From Mt. Fuji LiDAR to Shizuoka's urban context",
+      title: "Shizuoka Prefecture — from peak to floodplain",
       lede:
-        "A Shizuoka Prefecture workflow for turning official survey LiDAR into streamable point-cloud 3D Tiles alongside nationwide building context.",
+        "Explore Shizuoka's geography through Virtual Shizuoka's airborne LiDAR survey: from Mt. Fuji's forested flanks to the Abe River delta and Suruga Bay.",
       viewsTitle: "Geographic chapter",
       viewRegional: "Fuji to Shizuoka",
       viewFuji: "Mt. Fuji foothills",
@@ -93,18 +93,18 @@
       next: "Next",
       openTour: "Open story tour",
       chapterStep: (current, total) => `Chapter ${current} of ${total}`,
-      chapter1Title: "One connected geographic system",
+      chapter1Title: "Shizuoka: where mountains meet the sea",
       chapter1Copy:
-        "Begin with the regional relationship: Mt. Fuji and its foothills transition southwest into Shizuoka's developed urban land. Terrain supplies the geographic frame; streamed 3D Tiles add detail only where decisions need it.",
-      chapter2Title: "Official survey LiDAR is the source",
+        "Mt. Fuji anchors the northern skyline. Its flanks drain southwest into the Abe River valley, which fans out across a coastal plain before meeting Suruga Bay — one of Japan's deepest bays. This geography shapes everything: the city grew on alluvial floodplain, bounded by steep volcanic ridges and an active coastline.",
+      chapter2Title: "A city of 700,000 built on a delta",
       chapter2Copy:
-        "Shizuoka Prefecture publishes airborne laser (LP), airborne laser bathymetry (ALB), and mobile mapping (MMS) collections. These downloads are survey source files, not a browser-ready 3D Tiles endpoint.",
-      chapter3Title: "Cesium ion creates the streaming layer",
+        "Shizuoka city spreads across the Abe River delta. Look closely: the dense urban grid meets abrupt terrain transitions — hills, river channels, reclaimed coast. Virtual Shizuoka's airborne LiDAR captures all of it at survey precision, resolving roof heights, tree canopy, and ground surface simultaneously.",
+      chapter3Title: "Classified point cloud: reading the city layer by layer",
       chapter3Copy:
-        "Select LP original/ground meshes for the Fuji-to-Shizuoka-East footprint, validate the CRS and height datum, then upload the decompressed LAS/LAZ files to Cesium ion. CesiumJS requests only the point-cloud tiles needed for the current view.",
-      chapter4Title: "LiDAR and buildings answer different questions",
+        "The LiDAR survey classifies every return: ground (tan), low vegetation (lime), high vegetation (green), buildings (orange), and water (blue). Toggle layers to see the city stripped to its bare terrain, or compare the vegetated canopy against the modeled building footprints.",
+      chapter4Title: "The Fuji corridor: from peak to floodplain",
       chapter4Copy:
-        "Building 3D Tiles provide semantic urban context. LiDAR preserves measured ground, canopy, utility, and surface detail between modeled structures. Together they support planning, inspection, resilience, and change analysis without conflating the sources.",
+        "Pan north and the LiDAR narrative extends to the foothills of Fuji-san. The same dataset that shows Shizuoka's urban blocks resolves the forested ridges and terraced tea plantations of the interior — a continuous digital twin from stratovolcano to shoreline.",
       viewSelected: (label) => `${label} view selected.`,
       pointNeedsAsset:
         "Virtual Shizuoka point-cloud controls require a configured ion asset ID.",
@@ -128,9 +128,9 @@
     },
     ja: {
       languageLabel: "言語",
-      title: "富士山のLiDARから静岡の都市3Dコンテキストへ",
+      title: "静岡県：山頂から沖積平野へ",
       lede:
-        "静岡県の公式測量LiDARを、全国建物データと並べて配信可能な点群3D Tilesへ変換するワークフローです。",
+        "VIRTUAL SHIZUOKAの航空LiDAR測量で静岡の地理を探索します。富士山の森林斜面から安倍川デルタ、駿河湾まで。",
       viewsTitle: "地域チャプター",
       viewRegional: "富士山から静岡へ",
       viewFuji: "富士山麓",
@@ -196,18 +196,18 @@
       next: "次へ",
       openTour: "ストーリーツアーを開く",
       chapterStep: (current, total) => `チャプター ${current} / ${total}`,
-      chapter1Title: "一つにつながる地理システム",
+      chapter1Title: "静岡：山と海が出会う場所",
       chapter1Copy:
-        "富士山と山麓から南西の静岡市街へ続く地域関係から始めます。地形が地理的な枠組みを示し、ストリーミング3D Tilesが判断に必要な場所だけへ詳細を追加します。",
-      chapter2Title: "公式測量LiDARがソース",
+        "富士山が北の空を占め、その山腹から安倍川が南西に向かって流れ、海岸平野へと広がり、駿河湾に注ぎます。駿河湾は日本最深の湾のひとつです。この地形が静岡のすべてを形づくっています。市街地は沖積三角州の上に発達し、急峻な火山性の尾根と活発な海岸線に囲まれています。",
+      chapter2Title: "沖積デルタに広がる70万人の都市",
       chapter2Copy:
-        "静岡県は航空レーザ（LP）、航空レーザ測深（ALB）、モバイルマッピング（MMS）の点群を公開しています。これらは測量ソースファイルであり、ブラウザ向け3D Tilesエンドポイントではありません。",
-      chapter3Title: "Cesium ionでストリーミングレイヤーを作成",
+        "静岡市は安倍川デルタに広がっています。密集した市街地が急峻な地形変化と接していることに注目してください。丘陵、河川、埋め立て地が入り組んでいます。VIRTUAL SHIZUOKAの航空LiDARはすべてをサーベイ精度で捉え、屋根の高さ、樹冠、地表面を同時に記録しています。",
+      chapter3Title: "分類済み点群：レイヤーで読む都市",
       chapter3Copy:
-        "富士山から静岡県東部の対象範囲に合うLPオリジナル・グラウンド図郭を選び、座標系と標高基準を確認して、展開したLAS/LAZをCesium ionへアップロードします。CesiumJSは現在の視点に必要な点群タイルだけを要求します。",
-      chapter4Title: "LiDARと建物は異なる問いに答える",
+        "LiDAR測量はすべての反射を分類します。地盤（タン）、低植生（黄緑）、高植生（緑）、建物（オレンジ）、水面（青）。レイヤーを切り替えて、地形だけに絞った都市の姿や、樹木の樹冠とモデル化された建物フットプリントを比較してください。",
+      chapter4Title: "富士山回廊：山頂から沖積平野へ",
       chapter4Copy:
-        "建物3D Tilesは意味を持つ都市コンテキストを提供し、LiDARは地表、樹冠、設備、構造物間の表面形状を計測値として保持します。両者を区別して組み合わせることで、計画、点検、防災、変化解析を支援します。",
+        "北に視点を移すと、LiDARのデータは富士山麓まで続きます。静岡の市街地ブロックを捉えたのと同じデータが、内陸の森林尾根や茶畑の段々畑まで解像します。成層火山から海岸線まで続く、途切れのないデジタルツインです。",
       viewSelected: (label) => `${label}ビューを選択しました。`,
       pointNeedsAsset:
         "VIRTUAL SHIZUOKA点群の操作にはionアセットIDの設定が必要です。",

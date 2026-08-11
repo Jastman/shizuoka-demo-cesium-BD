@@ -10,7 +10,6 @@
     "https://www.geospatial.jp/ckan/dataset?q=VIRTUAL+SHIZUOKA&organization=shizuokapref&sort=metadata_modified+desc";
   const PLATEAU_AOI_LOD2 =
     "https://assets.cms.plateau.reearth.io/assets/16/f01621-f72d-4c64-9c40-67c97cee7c5f/22100_shizuoka-shi_city_2023_citygml_3_op_bldg_3dtiles_22101_aoi-ku_lod2/tileset.json";
-  const LIDAR_ION_ASSET_ID = 5124359;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const terrainProvider = await Cesium.createWorldBathymetryAsync({
     requestVertexNormals: true,
@@ -207,9 +206,9 @@
         "Each voxel cell aggregates water saturation, topographic wetness, and runoff risk across the 5 km × 6 km × 600 m urban corridor volume. Switch analytical views, adjust the visibility threshold, or scrub through the 24-hour storm simulation below.",
     },
     {
-      title: "3. Urban LiDAR context",
+      title: "3. Urban buildings + voxel overlap",
       body:
-        "The Abe River delta urban area (5 km × 6 km, 280k points) shows classified ground, buildings, vegetation and the river channel. This is the zone where watershed runoff intersects dense urban infrastructure — the critical flood-risk corridor.",
+        "PLATEAU 3D buildings mark every structure in the Abe delta. The voxel volume sits beneath them — showing subsurface water saturation under the city's foundations. High saturation under dense urban areas signals elevated flood and liquefaction risk.",
     },
     {
       title: "4. Suruga Bay outflow",
@@ -746,28 +745,6 @@
   } catch (error) {
     ui.querySelector("#vx-source-status").textContent =
       "Illustrative derived voxels · PLATEAU city context unavailable";
-  }
-
-  try {
-    const lidarTileset = await Cesium.Cesium3DTileset.fromIonAssetId(LIDAR_ION_ASSET_ID, {
-      maximumScreenSpaceError: 4,
-    });
-    // Color by classification: Ground=tan, LowVeg=lime, HighVeg=green, Building=orange, Water=blue
-    lidarTileset.style = new Cesium.Cesium3DTileStyle({
-      color: {
-        conditions: [
-          ["${Classification} === 9", "color('#4db8ff', 0.9)"],
-          ["${Classification} === 6", "color('#e05a1a', 0.9)"],
-          ["${Classification} === 4", "color('#2e7d32', 0.85)"],
-          ["${Classification} === 3", "color('#66bb6a', 0.85)"],
-          ["true",                    "color('#a08c6e', 0.8)"],
-        ],
-      },
-      pointSize: 2,
-    });
-    viewer.scene.primitives.add(lidarTileset);
-  } catch (error) {
-    // LiDAR context optional — voxel analytics still works
   }
 
   rebuildVoxelPrimitive();
