@@ -1026,6 +1026,12 @@
       pitch: Cesium.Math.toRadians(-24),
       range: 12500,
     },
+    rrim: {
+      target: Cesium.Cartesian3.fromDegrees(138.39, 35.02, 100),
+      heading: Cesium.Math.toRadians(0),
+      pitch: Cesium.Math.toRadians(-55),
+      range: 28000,
+    },
   };
 
   const CHAPTERS = [
@@ -1035,7 +1041,7 @@
       copyKey: "chapter1Copy",
     },
     {
-      view: "urban",
+      view: "rrim",
       titleKey: "chapter2Title",
       copyKey: "chapter2Copy",
     },
@@ -1057,6 +1063,7 @@
     layerMode: "buildings",
     detailed: false,
     chapterIndex: 0,
+    ch2PointCloudHidden: false,
     playing: false,
     storyOpen: false,
     timer: null,
@@ -1229,8 +1236,21 @@
   }
 
   function showChapter(index) {
+    const wasChapter2 = state.chapterIndex === 1;
     state.chapterIndex = (index + CHAPTERS.length) % CHAPTERS.length;
+    const isChapter2 = state.chapterIndex === 1;
     const chapter = CHAPTERS[state.chapterIndex];
+
+    if (isChapter2 && !wasChapter2) {
+      if (state.pointCloud) {
+        state.ch2PointCloudHidden = state.pointCloud.show;
+        state.pointCloud.show = false;
+      } else {
+        state.ch2PointCloudHidden = false;
+      }
+    } else if (!isChapter2 && wasChapter2 && state.pointCloud) {
+      state.pointCloud.show = state.layerMode !== "buildings";
+    }
 
     // Chapter 2 (index 1): RRIM + slope overlay to show delta/terrain boundary
     rrimLayer.alpha  = state.chapterIndex === 1 ? 0.82 : 0.0;
