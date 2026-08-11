@@ -101,10 +101,10 @@
         "Shizuoka city spreads across the Abe River delta. Look closely: the dense urban grid meets abrupt terrain transitions — hills, river channels, reclaimed coast. Virtual Shizuoka's airborne LiDAR captures all of it at survey precision, resolving roof heights, tree canopy, and ground surface simultaneously.",
       chapter3Title: "Classified point cloud: reading the city layer by layer",
       chapter3Copy:
-        "The LiDAR survey classifies every return: ground (tan), low vegetation (lime), high vegetation (green), buildings (orange), and water (blue). Toggle layers to see the city stripped to its bare terrain, or compare the vegetated canopy against the modeled building footprints.",
+        "The LiDAR survey classifies every return: ground (tan), low vegetation (lime), high vegetation (green), buildings (orange), and water (blue). Toggle 'LiDAR only' to strip the city to its bare terrain, or 'LiDAR + buildings' to compare measured canopy against modeled building footprints.",
       chapter4Title: "The Fuji corridor: from peak to floodplain",
       chapter4Copy:
-        "Pan north and the LiDAR narrative extends to the foothills of Fuji-san. The same dataset that shows Shizuoka's urban blocks resolves the forested ridges and terraced tea plantations of the interior — a continuous digital twin from stratovolcano to shoreline.",
+        "Pan north and the LiDAR narrative extends toward the foothills of Fuji-san. The same dataset that shows Shizuoka's urban blocks resolves forested ridges and terraced tea plantations — a continuous digital twin from stratovolcano to shoreline.",
       viewSelected: (label) => `${label} view selected.`,
       pointNeedsAsset:
         "Virtual Shizuoka point-cloud controls require a configured ion asset ID.",
@@ -289,6 +289,16 @@
   scene.sun.show = true;
   scene.backgroundColor = Cesium.Color.fromCssColorString("#8fc5e8");
   scene.fog.enabled = true;
+
+  // Hillshade layer — added on top of OSM, toggled for terrain-contrast chapters
+  const hillshadeLayer = viewer.imageryLayers.addImageryProvider(
+    new Cesium.UrlTemplateImageryProvider({
+      url: "https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}",
+      credit: "Esri, USGS, NGA, NASA, CGIAR, N Robinson, NCEAS, NLS, OS, NMA, Geodatastyrelsen and the GIS User Community",
+      maximumLevel: 15,
+    })
+  );
+  hillshadeLayer.alpha = 0.0; // hidden by default; shown for terrain-contrast chapters
 
   const style = document.createElement("style");
   style.textContent = `
@@ -908,17 +918,17 @@
       copyKey: "chapter1Copy",
     },
     {
-      view: "fuji",
+      view: "urban",
       titleKey: "chapter2Title",
       copyKey: "chapter2Copy",
     },
     {
-      view: "east",
+      view: "urban",
       titleKey: "chapter3Title",
       copyKey: "chapter3Copy",
     },
     {
-      view: "urban",
+      view: "fuji",
       titleKey: "chapter4Title",
       copyKey: "chapter4Copy",
     },
@@ -930,8 +940,8 @@
     layerMode: "buildings",
     detailed: false,
     chapterIndex: 0,
-    playing: !prefersReducedMotion,
-    storyOpen: true,
+    playing: false,
+    storyOpen: false,
     timer: null,
   };
 
@@ -1059,6 +1069,10 @@
   function showChapter(index) {
     state.chapterIndex = (index + CHAPTERS.length) % CHAPTERS.length;
     const chapter = CHAPTERS[state.chapterIndex];
+
+    // Chapter 2 (index 1): terrain-contrast view — enable hillshade to show delta boundary
+    hillshadeLayer.alpha = state.chapterIndex === 1 ? 0.55 : 0.0;
+    scene.requestRender();
 
     renderChapterText();
     flyTo(chapter.view);
@@ -1263,10 +1277,11 @@
           conditions: [
             ["${Classification} === 2", "color('#8B6914')"],   // ground - brown
             ["${Classification} === 3", "color('#90EE90')"],   // low vegetation - light green
-            ["${Classification} === 5", "color('#228B22')"],   // high vegetation - forest green
+            ["${Classification} === 4", "color('#5ab552')"],   // medium vegetation - mid green
+            ["${Classification} === 5", "color('#228B22')"],   // high vegetation / forest - dark green
             ["${Classification} === 6", "color('#FF6B35')"],   // buildings - orange-red
             ["${Classification} === 9", "color('#4FC3F7')"],   // water - blue
-            ["true", "color('#CCCCCC')"],                      // other - grey
+            ["true", "color('#a08c6e')"],                      // unclassified - warm tan (not grey)
           ],
         },
       });
@@ -1327,9 +1342,39 @@
     loadVirtualShizuokaPointCloud(),
   ]);
 
+  // Add Mt. Fuji summit label
+  viewer.entities.add({
+    name: "Mt. Fuji",
+    position: Cesium.Cartesian3.fromDegrees(138.7274, 35.3606, 3776),
+    label: {
+      text: "富士山\nMt. Fuji\n3,776 m",
+      font: "bold 14px ui-sans-serif, system-ui, sans-serif",
+      fillColor: Cesium.Color.WHITE,
+      outlineColor: Cesium.Color.fromCssColorString("#1a1a2e"),
+      outlineWidth: 3,
+      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      pixelOffset: new Cesium.Cartesian2(0, -16),
+      heightReference: Cesium.HeightReference.NONE,
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      scaleByDistance: new Cesium.NearFarScalar(8000, 1.1, 200000, 0.5),
+    },
+    point: {
+      pixelSize: 8,
+      color: Cesium.Color.fromCssColorString("#e74c3c"),
+      outlineColor: Cesium.Color.WHITE,
+      outlineWidth: 2,
+      heightReference: Cesium.HeightReference.NONE,
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      scaleByDistance: new Cesium.NearFarScalar(8000, 1.2, 200000, 0.6),
+    },
+  });
+
   updatePlayButton();
   updateLayerButtons();
-  setStoryOpen(true, true);
+  // Tour is user-initiated — do not auto-open
+  openStoryButton.classList.add("is-visible");
+  state.storyOpen = false;
 
   if (prefersReducedMotion) {
     announce(t("reducedMotion"));
