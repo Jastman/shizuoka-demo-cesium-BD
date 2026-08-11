@@ -283,7 +283,7 @@
     "2026-08-10T03:00:00Z",
   );
   viewer.clock.shouldAnimate = false;
-  scene.globe.depthTestAgainstTerrain = true;
+  scene.globe.depthTestAgainstTerrain = false; // point cloud clips into terrain when true
   scene.globe.enableLighting = true;
   scene.globe.dynamicAtmosphereLighting = true;
   scene.sun.show = true;
@@ -1034,19 +1034,19 @@
       pitch: Cesium.Math.toRadians(-50),
       range: 9000,
     },
-    // Ch3: urban density — Atami city core, point cloud classification visible
+    // Ch3: close urban view — 500m range so individual LiDAR point dots are visible
     urban: {
-      target: Cesium.Cartesian3.fromDegrees(139.0728, 35.0976, 60),
+      target: Cesium.Cartesian3.fromDegrees(139.073, 35.0972, 20),
       heading: Cesium.Math.toRadians(200),
-      pitch: Cesium.Math.toRadians(-22),
-      range: 3200,
+      pitch: Cesium.Math.toRadians(-30),
+      range: 500,
     },
-    // Ch4: hillside edge — where Atami's dense urban fabric meets the steep ridge (landslide zone)
+    // Ch4: hillside edge — landslide origin zone, close enough to see point cloud on slope
     foothills: {
-      target: Cesium.Cartesian3.fromDegrees(139.082, 35.108, 120),
+      target: Cesium.Cartesian3.fromDegrees(139.082, 35.108, 80),
       heading: Cesium.Math.toRadians(255),
-      pitch: Cesium.Math.toRadians(-18),
-      range: 2400,
+      pitch: Cesium.Math.toRadians(-25),
+      range: 800,
     },
     // Button views
     fuji: {
@@ -1161,7 +1161,7 @@
 
   function updateDetail(shouldAnnounce = true) {
     const buildingError = state.detailed ? 8 : 16;
-    const pointError = state.detailed ? 6 : 12;
+    const pointError = state.detailed ? 2 : 4;  // keep tight for point cloud visibility
 
     if (state.buildings) {
       state.buildings.maximumScreenSpaceError = buildingError;
@@ -1527,9 +1527,9 @@
       const pointCloud = await Cesium.Cesium3DTileset.fromIonAssetId(
         VIRTUAL_SHIZUOKA_ION_ASSET_ID,
         {
-          maximumScreenSpaceError: 12,
-          cacheBytes: 256 * 1024 * 1024,
-          maximumCacheOverflowBytes: 64 * 1024 * 1024,
+          maximumScreenSpaceError: 4,  // aggressive for close-up visibility
+          cacheBytes: 512 * 1024 * 1024,
+          maximumCacheOverflowBytes: 128 * 1024 * 1024,
           dynamicScreenSpaceError: true,
           dynamicScreenSpaceErrorDensity: 2.0e-4,
           dynamicScreenSpaceErrorFactor: 12,
@@ -1538,7 +1538,7 @@
       );
       // Classification-based color styling matching LP LiDAR standard classes
       pointCloud.style = new Cesium.Cesium3DTileStyle({
-        pointSize: 3,
+        pointSize: 4,
         color: {
           conditions: [
             ["${Classification} === 2", "color('#8B6914')"],   // ground - brown
