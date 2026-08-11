@@ -875,6 +875,22 @@
         </dl>
       </section>
 
+      <section class="vs-section" aria-labelledby="vs-terrain-title" id="vs-terrain-section">
+        <h2 class="vs-section-title" id="vs-terrain-title">${locale === 'ja' ? '地形解析' : 'Terrain analysis'}</h2>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+            <input type="checkbox" id="vs-rrim-toggle" style="width:16px;height:16px;accent-color:var(--vs-accent)">
+            <span style="font-size:13px; color:var(--vs-text)">${locale === 'ja' ? '赤色立体地図 (RRIM)' : 'Red Relief Image Map (RRIM)'}</span>
+          </label>
+          <p style="margin:0; font-size:11px; color:var(--vs-muted); line-height:1.5">
+            ${locale === 'ja' ? '国土地理院の5m DEMから生成。平地は白、急斜面は赤で表示。' : 'Generated from GSI 5m DEM. Flat plains appear pale, steep slopes appear red.'}
+            <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer" style="color:#a9e9ff; text-decoration-thickness:1px; text-underline-offset:3px">
+              ${locale === 'ja' ? 'データソース →' : 'Data source →'}
+            </a>
+          </p>
+        </div>
+      </section>
+
       <section class="vs-section" aria-labelledby="vs-status-title">
         <h2 class="vs-section-title" id="vs-status-title" data-i18n="statusTitle">${t("statusTitle")}</h2>
         <dl class="vs-status-list">
@@ -1000,6 +1016,7 @@
   const layerButtons = Array.from(
     shell.querySelectorAll("#vs-layer-controls [data-layer]"),
   );
+  const rrimToggle = shell.querySelector("#vs-rrim-toggle");
 
   const VIEWS = {
     regional: {
@@ -1064,12 +1081,13 @@
     detailed: false,
     chapterIndex: 0,
     ch2PointCloudHidden: false,
+    rrimManual: false,
     playing: false,
     storyOpen: false,
     timer: null,
   };
 
-  function flyTo(viewName) {
+  function flyTo(viewName, options = {}) {
     const view = VIEWS[viewName];
     viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(view.target, 0), {
       offset: new Cesium.HeadingPitchRange(
@@ -1077,7 +1095,9 @@
         view.pitch,
         view.range,
       ),
-      duration: cameraDuration,
+      duration: options.duration ?? cameraDuration,
+      maximumHeight: options.maximumHeight,
+      easingFunction: Cesium.EasingFunction?.QUADRATIC_IN_OUT,
     });
   }
 
@@ -1236,10 +1256,17 @@
   }
 
   function showChapter(index) {
-    const wasChapter2 = state.chapterIndex === 1;
+    const previousIndex = state.chapterIndex;
+    const wasChapter2 = previousIndex === 1;
     state.chapterIndex = (index + CHAPTERS.length) % CHAPTERS.length;
     const isChapter2 = state.chapterIndex === 1;
     const chapter = CHAPTERS[state.chapterIndex];
+    const flightOptions = previousIndex === 0 && state.chapterIndex === 1
+      ? {
+          duration: prefersReducedMotion ? 0 : 4.5,
+          maximumHeight: 75000,
+        }
+      : {};
 
     if (isChapter2 && !wasChapter2) {
       if (state.pointCloud) {
@@ -1252,14 +1279,20 @@
       state.pointCloud.show = state.layerMode !== "buildings";
     }
 
-    // Chapter 2 (index 1): RRIM + slope overlay to show delta/terrain boundary
-    rrimLayer.alpha  = state.chapterIndex === 1 ? 0.82 : 0.0;
-    slopeLayer.alpha = state.chapterIndex === 1 ? 0.25 : 0.0;
+    // Chapter 2 (index 1): RRIM + slope overlay
+    if (state.chapterIndex === 1) {
+      rrimLayer.alpha = 0.82;
+      slopeLayer.alpha = 0.25;
+    } else {
+      rrimLayer.alpha = state.rrimManual ? 0.82 : 0.0;
+      slopeLayer.alpha = state.rrimManual ? 0.25 : 0.0;
+    }
+    if (rrimToggle) rrimToggle.checked = state.chapterIndex === 1 || state.rrimManual;
     scene.requestRender();
 
     resetCountdownDisplay();
     renderChapterText();
-    flyTo(chapter.view);
+    flyTo(chapter.view, flightOptions);
     announce(`${t(chapter.titleKey)}. ${t(chapter.copyKey)}`);
     startCountdown();
   }
@@ -1365,6 +1398,18 @@
     }
     announce(t(state.playing ? "tourResumed" : "tourPaused"));
   });
+
+  if (rrimToggle) {
+    rrimToggle.addEventListener("change", () => {
+      state.rrimManual = rrimToggle.checked;
+      // Only override when not in chapter 2 (chapter 2 auto-manages the layers)
+      if (state.chapterIndex !== 1) {
+        rrimLayer.alpha = rrimToggle.checked ? 0.82 : 0.0;
+        slopeLayer.alpha = rrimToggle.checked ? 0.25 : 0.0;
+        scene.requestRender();
+      }
+    });
+  }
 
   shell.querySelector("#vs-language").addEventListener("change", (event) => {
     setLocale(event.target.value);
