@@ -358,6 +358,33 @@
       border-radius: 20px;
       padding: 20px 22px 18px;
       color: var(--vs-text);
+      /* Border timer via conic-gradient pseudo-element */
+      --vs-timer-progress: 1;
+    }
+
+    /* Animated border: conic-gradient drains clockwise as --vs-timer-progress goes 1→0 */
+    .vs-story::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: 22px;
+      background: conic-gradient(
+        var(--vs-accent) calc(var(--vs-timer-progress) * 360deg),
+        rgba(196, 209, 223, 0.15) calc(var(--vs-timer-progress) * 360deg)
+      );
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* Inner mask to show only the border ring, not fill */
+    .vs-story::after {
+      content: "";
+      position: absolute;
+      inset: 2px;
+      border-radius: 18px;
+      background: var(--vs-bg);
+      z-index: -1;
+      pointer-events: none;
     }
 
     .vs-story::backdrop {
@@ -403,55 +430,11 @@
     .vs-tour-cta:focus-visible { outline: 3px solid #ffffff; outline-offset: 3px; }
     .vs-tour-cta.is-hidden { display: none; }
 
-    /* Story header row: step counter + countdown ring side by side */
+    /* Story header: just the step counter */
     .vs-story-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       margin: 0 0 6px;
-    }
-
-    /* Countdown ring */
-    .vs-countdown {
-      position: relative;
-      width: 42px;
-      height: 42px;
-      flex-shrink: 0;
-    }
-
-    .vs-countdown svg {
-      position: absolute;
-      inset: 0;
-      transform: rotate(-90deg);
-    }
-
-    .vs-countdown-track {
-      fill: none;
-      stroke: rgba(196, 209, 223, 0.18);
-      stroke-width: 3.5;
-    }
-
-    .vs-countdown-arc {
-      fill: none;
-      stroke: var(--vs-accent);
-      stroke-width: 3.5;
-      stroke-linecap: round;
-      /* circumference = 2π × 17 ≈ 106.8 */
-      stroke-dasharray: 106.8;
-      stroke-dashoffset: 0;
-      transition: stroke-dashoffset 1000ms linear;
-    }
-
-    .vs-countdown-num {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 800;
-      color: var(--vs-accent-strong);
-      font-variant-numeric: tabular-nums;
     }
 
     .vs-eyebrow {
@@ -960,13 +943,6 @@
 
       <div class="vs-story-header">
         <p class="vs-eyebrow" id="vs-story-step"></p>
-        <div class="vs-countdown" aria-hidden="true">
-          <svg viewBox="0 0 38 38" width="42" height="42">
-            <circle class="vs-countdown-track" cx="19" cy="19" r="17"/>
-            <circle class="vs-countdown-arc" id="vs-countdown-arc" cx="19" cy="19" r="17"/>
-          </svg>
-          <span class="vs-countdown-num" id="vs-countdown-num">30</span>
-        </div>
       </div>
 
       <h2 class="vs-story-title" id="vs-story-title"></h2>
@@ -1147,7 +1123,6 @@
   }
 
   const CHAPTER_DURATION_MS = 30000;
-  const COUNTDOWN_CIRCUMFERENCE = 2 * Math.PI * 17; // ≈ 106.8
 
   function stopTimer() {
     if (state.timer !== null) {
@@ -1164,16 +1139,12 @@
     stopTimer();
     if (!state.playing || !state.storyOpen) return;
 
-    const arc = shell.querySelector("#vs-countdown-arc");
-    const num = shell.querySelector("#vs-countdown-num");
-    let secondsLeft = CHAPTER_DURATION_MS / 1000;
+    const totalSeconds = CHAPTER_DURATION_MS / 1000;
+    let secondsLeft = totalSeconds;
 
     function tick() {
-      if (num) num.textContent = String(secondsLeft);
-      if (arc) {
-        const fraction = secondsLeft / (CHAPTER_DURATION_MS / 1000);
-        arc.style.strokeDashoffset = String(COUNTDOWN_CIRCUMFERENCE * (1 - fraction));
-      }
+      const progress = secondsLeft / totalSeconds;
+      storyElement.style.setProperty("--vs-timer-progress", String(progress));
       secondsLeft--;
     }
     tick();
@@ -1187,10 +1158,7 @@
   }
 
   function resetCountdownDisplay() {
-    const arc = shell.querySelector("#vs-countdown-arc");
-    const num = shell.querySelector("#vs-countdown-num");
-    if (num) num.textContent = "30";
-    if (arc) arc.style.strokeDashoffset = "0";
+    storyElement.style.setProperty("--vs-timer-progress", "1");
   }
 
   function updatePlayButton() {
