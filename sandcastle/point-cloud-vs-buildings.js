@@ -326,8 +326,7 @@
     }
 
     .vs-panel,
-    .vs-story,
-    .vs-open-story {
+    .vs-story {
       pointer-events: auto;
       border: 1px solid var(--vs-border);
       background: var(--vs-bg);
@@ -369,25 +368,25 @@
       display: none;
     }
 
-    /* Tour CTA — vivid accent, sits at TOP of panel */
+    /* Tour CTA — vivid blue, sits between lede and controls */
     .vs-tour-cta {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       width: 100%;
-      margin-bottom: 14px;
+      margin: 12px 0 0;
       padding: 13px 16px;
       border-radius: 12px;
-      background: linear-gradient(135deg, #54d2c7 0%, #3ab8d8 100%);
-      color: #061420;
+      background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
+      color: #ffffff;
       font-size: 14px;
       font-weight: 800;
       letter-spacing: 0.02em;
       text-align: center;
       cursor: pointer;
       border: none;
-      box-shadow: 0 4px 18px rgba(84, 210, 199, 0.35);
+      box-shadow: 0 4px 18px rgba(33, 150, 243, 0.45);
       transition: filter 120ms, transform 80ms, box-shadow 120ms;
     }
 
@@ -397,8 +396,8 @@
     }
 
     .vs-tour-cta:hover {
-      filter: brightness(1.12);
-      box-shadow: 0 6px 22px rgba(84, 210, 199, 0.5);
+      filter: brightness(1.15);
+      box-shadow: 0 6px 24px rgba(33, 150, 243, 0.6);
     }
     .vs-tour-cta:active { transform: scale(0.97); }
     .vs-tour-cta:focus-visible { outline: 3px solid #ffffff; outline-offset: 3px; }
@@ -813,7 +812,6 @@
   shell.lang = locale;
   shell.innerHTML = `
     <main class="vs-panel" aria-labelledby="vs-title">
-      <button class="vs-tour-cta" id="vs-open-story" type="button" data-i18n="openTour">${t("openTour")}</button>
       <div class="vs-language">
         <label for="vs-language" data-i18n="languageLabel">${t("languageLabel")}</label>
         <select id="vs-language">
@@ -823,6 +821,7 @@
       </div>
       <h1 class="vs-title" id="vs-title" data-i18n="title">${t("title")}</h1>
       <p class="vs-lede" data-i18n="lede">${t("lede")}</p>
+      <button class="vs-tour-cta" id="vs-open-story" type="button" data-i18n="openTour">${t("openTour")}</button>
 
       <section class="vs-section" aria-labelledby="vs-views-title">
         <h2 class="vs-section-title" id="vs-views-title" data-i18n="viewsTitle">${t("viewsTitle")}</h2>
