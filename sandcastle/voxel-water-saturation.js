@@ -10,21 +10,22 @@
     "https://www.geospatial.jp/ckan/dataset?q=VIRTUAL+SHIZUOKA&organization=shizuokapref&sort=metadata_modified+desc";
   const PLATEAU_AOI_LOD2 =
     "https://assets.cms.plateau.reearth.io/assets/16/f01621-f72d-4c64-9c40-67c97cee7c5f/22100_shizuoka-shi_city_2023_citygml_3_op_bldg_3dtiles_22101_aoi-ku_lod2/tileset.json";
-  const SURUGA_BATHYMETRY_TERRAIN_ASSET_ID = 5131765;
-  const SURUGA_MEAN_SEA_LEVEL = 40.6;
+  const BATHYMETRY_ASSET_BASE =
+    "https://jastman.github.io/shizuoka-demo-cesium-BD/assets";
+  const BATHYMETRY_DEPTH_IMAGE =
+    `${BATHYMETRY_ASSET_BASE}/shimizu-bathymetry-depth.png`;
+  const BATHYMETRY_CONTOURS =
+    `${BATHYMETRY_ASSET_BASE}/shimizu-bathymetry-contours.geojson`;
+  const BATHYMETRY_RECTANGLE = Cesium.Rectangle.fromDegrees(
+    138.5880566,
+    35.1129536,
+    138.6316566,
+    35.1179036
+  );
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const worldTerrainProvider = await Cesium.createWorldTerrainAsync({
     requestVertexNormals: true,
   });
-  let bathymetryTerrainProvider = null;
-  try {
-    bathymetryTerrainProvider = await Cesium.CesiumTerrainProvider.fromIonAssetId(
-      SURUGA_BATHYMETRY_TERRAIN_ASSET_ID,
-      { requestVertexNormals: true }
-    );
-  } catch (error) {
-    console.warn("Suruga Bay bathymetry terrain unavailable:", error);
-  }
   const baseProvider = new Cesium.OpenStreetMapImageryProvider({
     url: "https://tile.openstreetmap.org/",
     credit: "© OpenStreetMap contributors",
@@ -52,22 +53,75 @@
   viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2026-08-12T03:00:00Z");
   viewer.clock.shouldAnimate = false;
 
-  const bathymetryMaterial = Cesium.createElevationBandMaterial({
-    scene: viewer.scene,
-    layers: [
-      {
-        entries: [
-          { height: SURUGA_MEAN_SEA_LEVEL - 12, color: Cesium.Color.TRANSPARENT },
-          { height: SURUGA_MEAN_SEA_LEVEL - 11, color: Cesium.Color.fromCssColorString("#082f49").withAlpha(0.96) },
-          { height: SURUGA_MEAN_SEA_LEVEL - 7, color: Cesium.Color.fromCssColorString("#0369a1").withAlpha(0.94) },
-          { height: SURUGA_MEAN_SEA_LEVEL - 3, color: Cesium.Color.fromCssColorString("#06b6d4").withAlpha(0.9) },
-          { height: SURUGA_MEAN_SEA_LEVEL - 1, color: Cesium.Color.fromCssColorString("#67e8f9").withAlpha(0.78) },
-          { height: SURUGA_MEAN_SEA_LEVEL - 0.5, color: Cesium.Color.TRANSPARENT },
-          { height: SURUGA_MEAN_SEA_LEVEL + 0.5, color: Cesium.Color.TRANSPARENT },
-        ],
+  let bathymetryOverlay = null;
+  let bathymetryExtent = null;
+  let bathymetryContours = null;
+  try {
+    bathymetryOverlay = viewer.entities.add({
+      show: false,
+      rectangle: {
+        coordinates: BATHYMETRY_RECTANGLE,
+        height: 120,
+        material: new Cesium.ImageMaterialProperty({
+          image: BATHYMETRY_DEPTH_IMAGE,
+          transparent: true,
+        }),
       },
-    ],
-  });
+    });
+    bathymetryExtent = viewer.entities.add({
+      show: false,
+      polyline: {
+        positions: Cesium.Cartesian3.fromDegreesArrayHeights([
+          138.5880566, 35.1129536, 121,
+          138.6316566, 35.1129536, 121,
+          138.6316566, 35.1179036, 121,
+          138.5880566, 35.1179036, 121,
+          138.5880566, 35.1129536, 121,
+        ]),
+        width: 2,
+        material: new Cesium.PolylineDashMaterialProperty({
+          color: Cesium.Color.fromCssColorString("#f8fafc").withAlpha(0.9),
+          dashLength: 12,
+        }),
+      },
+    });
+
+    bathymetryContours = await Cesium.GeoJsonDataSource.load(
+      BATHYMETRY_CONTOURS,
+      {
+        stroke: Cesium.Color.WHITE.withAlpha(0.96),
+        strokeWidth: 3,
+        clampToGround: true,
+        credit: "Virtual Shizuoka 2025 ALB (CC BY 4.0)",
+      }
+    );
+    for (const entity of bathymetryContours.entities.values) {
+      const positions = entity.polyline?.positions?.getValue(
+        viewer.clock.currentTime
+      );
+      if (!positions) {
+        continue;
+      }
+      entity.polyline.clampToGround = false;
+      entity.polyline.positions = positions.map((position) => {
+        const cartographic = Cesium.Cartographic.fromCartesian(position);
+        return Cesium.Cartesian3.fromRadians(
+          cartographic.longitude,
+          cartographic.latitude,
+          121
+        );
+      });
+      entity.polyline.material = new Cesium.PolylineOutlineMaterialProperty({
+        color: Cesium.Color.WHITE,
+        outlineColor: Cesium.Color.fromCssColorString("#081d58"),
+        outlineWidth: 2,
+      });
+    }
+    bathymetryContours.show = false;
+    await viewer.dataSources.add(bathymetryContours);
+  } catch (error) {
+    console.warn("Shimizu bathymetry overlay unavailable:", error);
+  }
 
   viewer.scene.canvas.setAttribute(
     "aria-label",
@@ -219,11 +273,11 @@
       range: 7000,
     },
     {
-      label: "Coast and Suruga Bay",
+      label: "Shimizu coastal survey",
       target: [138.597, 35.114, 0],
       heading: 0,
-      pitch: -65,
-      range: 2200,
+      pitch: -88,
+      range: 2600,
     },
   ];
   const tourCopy = [
@@ -243,9 +297,9 @@
         "PLATEAU 3D buildings mark every structure in the Abe delta. The voxel volume sits beneath them — showing subsurface water saturation under the city's foundations. High saturation under dense urban areas signals elevated flood and liquefaction risk.",
     },
     {
-      title: "4. Suruga Bay outflow",
+      title: "4. Shimizu coastal bathymetry",
       body:
-        "The connected water story ends here: watershed runoff → Shizuoka urban floodplain → Suruga Bay. Two Virtual Shizuoka Airborne Laser Bathymetry survey swaths cross the nearshore zone east of the Abe River mouth. The blue depth ramp isolates measured seabed returns down to 10.3 m below mean sea level. Terrain relief is exaggerated four times for inspection.",
+        "This regional coastal case study maps measured Virtual Shizuoka Airborne Laser Bathymetry along the Shimizu coast. Color appears only where the DEM records depths below mean sea level; white contours mark 2 m intervals down to 10 m. Transparent areas are no-data, not assumed seabed. This coverage is separate from the Abe River mouth.",
     },
   ];
 
@@ -253,20 +307,20 @@
     if (Cesium.defined(voxelPrimitive)) {
       voxelPrimitive.show = index !== 3;
     }
-    viewer.terrainProvider =
-      index === 3 && bathymetryTerrainProvider
-        ? bathymetryTerrainProvider
-        : worldTerrainProvider;
-    viewer.scene.globe.material =
-      index === 3 && bathymetryTerrainProvider
-        ? bathymetryMaterial
-        : undefined;
-    viewer.scene.verticalExaggeration =
-      index === 3 && bathymetryTerrainProvider ? 4.0 : 1.0;
-    viewer.scene.verticalExaggerationRelativeHeight =
-      index === 3 && bathymetryTerrainProvider ? SURUGA_MEAN_SEA_LEVEL : 0.0;
-    // Keep subsurface analytics visible over the custom bathymetry terrain.
-    viewer.scene.globe.depthTestAgainstTerrain = (index !== 3);
+    if (bathymetryOverlay) {
+      bathymetryOverlay.show = index === 3;
+    }
+    if (bathymetryExtent) {
+      bathymetryExtent.show = index === 3;
+    }
+    if (bathymetryContours) {
+      bathymetryContours.show = index === 3;
+    }
+    viewer.terrainProvider = worldTerrainProvider;
+    viewer.scene.globe.material = undefined;
+    viewer.scene.verticalExaggeration = 1.0;
+    viewer.scene.verticalExaggerationRelativeHeight = 0.0;
+    viewer.scene.globe.depthTestAgainstTerrain = true;
     if (index === 3) {
       const camera = cameras[index];
       viewer.camera.flyToBoundingSphere(
@@ -500,60 +554,68 @@
         <button type="button" id="vx-open-tour">Open guided tour</button>
       </div>
       <div class="vx-status" id="vx-source-status" role="status">Illustrative derived voxels · public source context only</div>
-      <p style="color:#b9cbd9;font-size:11px;margin:4px 0 10px">💡 Click any voxel in the scene to inspect its analytical value and metadata.</p>
-
-      <label class="vx-field">Analytical view
-        <select id="vx-view">
-          <option value="saturation">Water saturation</option>
-          <option value="change">Change from baseline</option>
-          <option value="wetness">Topographic wetness index</option>
-          <option value="runoff">Runoff risk index</option>
-          <option value="simulation">Infiltration simulation</option>
-        </select>
-      </label>
-      <label class="vx-field">Point-to-voxel aggregation
-        <select id="vx-aggregation">
-          <option value="average">Average</option>
-          <option value="minimum">Minimum</option>
-          <option value="maximum">Maximum</option>
-          <option value="median">Median</option>
-          <option value="mode">Mode (0.025 bins)</option>
-        </select>
-      </label>
-      <label class="vx-field" for="vx-threshold">
-        Visibility threshold: <output id="vx-threshold-value">0.15</output>
-        <input id="vx-threshold" type="range" min="0" max="0.7" step="0.01" value="0.15" />
-      </label>
-      <label class="vx-field" for="vx-clip">
-        Vertical reveal: <output id="vx-clip-value">100%</output>
-        <input id="vx-clip" type="range" min="0.08" max="1" step="0.01" value="1" />
-      </label>
-      <label class="vx-field" for="vx-time">
-        Storm simulation: <output id="vx-time-value">18 h</output>
-        <input id="vx-time" type="range" min="0" max="24" step="1" value="18" />
-      </label>
-
-      <section class="vx-card" aria-labelledby="vx-kpis-title">
-        <h2 id="vx-kpis-title">Active analytical tile</h2>
-        <div class="vx-grid">
-          <div class="vx-metric">Minimum<strong id="vx-min">—</strong></div>
-          <div class="vx-metric">Maximum<strong id="vx-max">—</strong></div>
-          <div class="vx-metric">Average<strong id="vx-avg">—</strong></div>
-          <div class="vx-metric">Median / mode<strong id="vx-med">—</strong></div>
-        </div>
-        <div class="vx-legend" aria-hidden="true"></div>
-        <div class="vx-note">Low <span style="float:right">High</span></div>
+      <section class="vx-card" id="vx-bathymetry-summary" aria-labelledby="vx-bathymetry-title" hidden>
+        <h2 id="vx-bathymetry-title">Measured depth overlay</h2>
+        <div aria-hidden="true" style="height:8px;border-radius:999px;background:linear-gradient(90deg,#081d58,#253494,#225ea8,#1d91c0,#41b6c4,#a1dab4,#ffffcc);margin:7px 0 3px;"></div>
+        <div class="vx-note" style="display:flex;justify-content:space-between;"><span>−10.3 m</span><span>0 m MSL</span></div>
+        <p class="vx-note" style="margin-top:7px;">White contours: 2 m intervals. Dashed outline: source raster extent. Transparent areas: no measured underwater depth.</p>
       </section>
+      <div id="vx-voxel-controls">
+        <p style="color:#b9cbd9;font-size:11px;margin:4px 0 10px">💡 Click any voxel in the scene to inspect its analytical value and metadata.</p>
 
-      <section class="vx-card" aria-labelledby="vx-update-title">
-        <h2 id="vx-update-title">Individual voxel update</h2>
-        <p class="vx-note" id="vx-selection">Target: L2 tile (1,2,1), sample (4,4,4)</p>
-        <div class="vx-actions">
-          <button type="button" id="vx-update">Add +0.08 recharge</button>
-          <button type="button" id="vx-clear">Clear update</button>
-        </div>
-        <p class="vx-note" id="vx-revision">Revision 0</p>
-      </section>
+        <label class="vx-field">Analytical view
+          <select id="vx-view">
+            <option value="saturation">Water saturation</option>
+            <option value="change">Change from baseline</option>
+            <option value="wetness">Topographic wetness index</option>
+            <option value="runoff">Runoff risk index</option>
+            <option value="simulation">Infiltration simulation</option>
+          </select>
+        </label>
+        <label class="vx-field">Point-to-voxel aggregation
+          <select id="vx-aggregation">
+            <option value="average">Average</option>
+            <option value="minimum">Minimum</option>
+            <option value="maximum">Maximum</option>
+            <option value="median">Median</option>
+            <option value="mode">Mode (0.025 bins)</option>
+          </select>
+        </label>
+        <label class="vx-field" for="vx-threshold">
+          Visibility threshold: <output id="vx-threshold-value">0.15</output>
+          <input id="vx-threshold" type="range" min="0" max="0.7" step="0.01" value="0.15" />
+        </label>
+        <label class="vx-field" for="vx-clip">
+          Vertical reveal: <output id="vx-clip-value">100%</output>
+          <input id="vx-clip" type="range" min="0.08" max="1" step="0.01" value="1" />
+        </label>
+        <label class="vx-field" for="vx-time">
+          Storm simulation: <output id="vx-time-value">18 h</output>
+          <input id="vx-time" type="range" min="0" max="24" step="1" value="18" />
+        </label>
+
+        <section class="vx-card" aria-labelledby="vx-kpis-title">
+          <h2 id="vx-kpis-title">Active analytical tile</h2>
+          <div class="vx-grid">
+            <div class="vx-metric">Minimum<strong id="vx-min">—</strong></div>
+            <div class="vx-metric">Maximum<strong id="vx-max">—</strong></div>
+            <div class="vx-metric">Average<strong id="vx-avg">—</strong></div>
+            <div class="vx-metric">Median / mode<strong id="vx-med">—</strong></div>
+          </div>
+          <div class="vx-legend" aria-hidden="true"></div>
+          <div class="vx-note">Low <span style="float:right">High</span></div>
+        </section>
+
+        <section class="vx-card" aria-labelledby="vx-update-title">
+          <h2 id="vx-update-title">Individual voxel update</h2>
+          <p class="vx-note" id="vx-selection">Target: L2 tile (1,2,1), sample (4,4,4)</p>
+          <div class="vx-actions">
+            <button type="button" id="vx-update">Add +0.08 recharge</button>
+            <button type="button" id="vx-clear">Clear update</button>
+          </div>
+          <p class="vx-note" id="vx-revision">Revision 0</p>
+        </section>
+      </div>
 
       <details class="vx-details">
         <summary>LAS/LAZ → voxel/tiling pipeline</summary>
@@ -580,9 +642,9 @@
       </details>
       <details class="vx-details">
         <summary>Sources and data</summary>
-        <p><strong>Coastal bathymetry terrain:</strong> <a href="${DATA_CATALOG}" target="_blank" rel="noopener noreferrer">Virtual Shizuoka</a> 2025 Airborne Laser Bathymetry (CC BY 4.0), tiles 08NE2263–08NE2272. Reprojected directly from the original EPSG:6676 LAS tiles to WGS84 and rasterized with PDAL before being streamed from Cesium ion as terrain (asset 5131765). The measured coverage consists of two narrow survey swaths east of the Abe River mouth.</p>
+        <p><strong>Coastal bathymetry:</strong> <a href="${DATA_CATALOG}" target="_blank" rel="noopener noreferrer">Virtual Shizuoka</a> 2025 Airborne Laser Bathymetry (CC BY 4.0), tiles 08NE2263–08NE2272. Reprojected directly from the original EPSG:6676 LAS tiles to WGS84, rasterized with PDAL, and shown as a transparent depth overlay with 2 m contours. No-data remains transparent. The source coverage is on the Shimizu coast, separate from the Abe River mouth.</p>
         <p><strong>Voxel analytics:</strong> Illustrative derived voxels over the Abe River corridor. Procedural model only — not a measured product. Requires calibration before operational use.</p>
-        <p>Terrain: Cesium World Terrain for chapters 1–3; Virtual Shizuoka ALB-derived terrain for chapter 4. City context: PLATEAU 2023 MLIT. Imagery: © OpenStreetMap contributors.</p>
+        <p>Terrain: Cesium World Terrain. City context: PLATEAU 2023 MLIT. Imagery: © OpenStreetMap contributors.</p>
       </details>
       <p class="vx-sr" id="vx-live" aria-live="polite"></p>
     </div>`;
@@ -604,10 +666,10 @@
     <h2 id="vx-story-title"></h2>
     <p id="vx-story-body"></p>
     <div id="vx-alb-legend" hidden style="margin:0 0 10px;font-size:11px;line-height:1.5;color:#a8c8d8;">
-      <strong style="color:#d5e2eb;display:block;margin-bottom:4px;">ALB-derived bathymetry terrain</strong>
-      <div aria-hidden="true" style="height:8px;border-radius:999px;background:linear-gradient(90deg,#082f49,#0369a1,#06b6d4,#67e8f9);margin:5px 0 3px;"></div>
-      <span style="display:flex;justify-content:space-between;"><span>−10.3 m</span><span>−1 m</span></span>
-      <span style="display:block;margin-top:3px;">Virtual Shizuoka measured survey swaths · relief exaggerated 4×</span>
+      <strong style="color:#d5e2eb;display:block;margin-bottom:4px;">Measured ALB depth overlay</strong>
+      <div aria-hidden="true" style="height:8px;border-radius:999px;background:linear-gradient(90deg,#081d58,#253494,#225ea8,#1d91c0,#41b6c4,#a1dab4,#ffffcc);margin:5px 0 3px;"></div>
+      <span style="display:flex;justify-content:space-between;"><span>−10.3 m</span><span>0 m MSL</span></span>
+      <span style="display:block;margin-top:3px;">White contours: 2 m · dashed: raster extent · transparent: no measured depth</span>
     </div>
     <div class="vx-story-controls">
       <button type="button" id="vx-prev">Previous</button>
@@ -673,8 +735,16 @@
     ui.querySelector("#vx-time-value").textContent = `${state.scenarioHour} h`;
     ui.querySelector("#vx-revision").textContent =
       `Revision ${state.revision} · ${provider ? provider.requests : 0} tile requests observed`;
-    ui.querySelector("#vx-live").textContent =
-      `${cameras[state.chapter].label}. ${state.view}, ${state.aggregation} aggregation.`;
+    const bathymetryVisible =
+      state.chapter === 3 && bathymetryOverlay !== null;
+    ui.querySelector("#vx-live").textContent = bathymetryVisible
+      ? "Shimizu coastal survey. Measured depths below mean sea level with two-meter contours."
+      : `${cameras[state.chapter].label}. ${state.view}, ${state.aggregation} aggregation.`;
+    ui.querySelector("#vx-bathymetry-summary").hidden = !bathymetryVisible;
+    ui.querySelector("#vx-voxel-controls").hidden = state.chapter === 3;
+    ui.querySelector("#vx-source-status").textContent = bathymetryVisible
+      ? "Measured Virtual Shizuoka ALB · Shimizu coast"
+      : "Illustrative derived voxels · public source context only";
     story.querySelector("#vx-story-step").textContent =
       `Guided chapter ${state.chapter + 1} of ${tourCopy.length}`;
     story.querySelector("#vx-story-title").textContent = tourCopy[state.chapter].title;
@@ -683,7 +753,7 @@
     story.querySelector("#vx-next").disabled = state.chapter === tourCopy.length - 1;
     story.querySelector("#vx-pause").textContent = state.tourPlaying ? "Pause" : "Resume";
     story.querySelector("#vx-alb-legend").hidden =
-      state.chapter !== 3 || !bathymetryTerrainProvider;
+      !bathymetryVisible;
     story.hidden = !state.tourOpen;
   }
 
