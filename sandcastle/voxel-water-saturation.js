@@ -10,7 +10,8 @@
     "https://www.geospatial.jp/ckan/dataset?q=VIRTUAL+SHIZUOKA&organization=shizuokapref&sort=metadata_modified+desc";
   const PLATEAU_AOI_LOD2 =
     "https://assets.cms.plateau.reearth.io/assets/16/f01621-f72d-4c64-9c40-67c97cee7c5f/22100_shizuoka-shi_city_2023_citygml_3_op_bldg_3dtiles_22101_aoi-ku_lod2/tileset.json";
-  const SURUGA_BATHYMETRY_TERRAIN_ASSET_ID = 5131678;
+  const SURUGA_BATHYMETRY_TERRAIN_ASSET_ID = 5131765;
+  const SURUGA_MEAN_SEA_LEVEL = 40.6;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const worldTerrainProvider = await Cesium.createWorldTerrainAsync({
     requestVertexNormals: true,
@@ -50,6 +51,23 @@
   // Fix clock to noon JST (03:00 UTC) so the scene renders in daytime
   viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2026-08-12T03:00:00Z");
   viewer.clock.shouldAnimate = false;
+
+  const bathymetryMaterial = Cesium.createElevationBandMaterial({
+    scene: viewer.scene,
+    layers: [
+      {
+        entries: [
+          { height: SURUGA_MEAN_SEA_LEVEL - 12, color: Cesium.Color.TRANSPARENT },
+          { height: SURUGA_MEAN_SEA_LEVEL - 11, color: Cesium.Color.fromCssColorString("#082f49").withAlpha(0.96) },
+          { height: SURUGA_MEAN_SEA_LEVEL - 7, color: Cesium.Color.fromCssColorString("#0369a1").withAlpha(0.94) },
+          { height: SURUGA_MEAN_SEA_LEVEL - 3, color: Cesium.Color.fromCssColorString("#06b6d4").withAlpha(0.9) },
+          { height: SURUGA_MEAN_SEA_LEVEL - 1, color: Cesium.Color.fromCssColorString("#67e8f9").withAlpha(0.78) },
+          { height: SURUGA_MEAN_SEA_LEVEL - 0.5, color: Cesium.Color.TRANSPARENT },
+          { height: SURUGA_MEAN_SEA_LEVEL + 0.5, color: Cesium.Color.TRANSPARENT },
+        ],
+      },
+    ],
+  });
 
   viewer.scene.canvas.setAttribute(
     "aria-label",
@@ -202,9 +220,9 @@
     },
     {
       label: "Coast and Suruga Bay",
-      target: [138.62, 35.096, 5],
+      target: [138.597, 35.114, 0],
       heading: 0,
-      pitch: -38,
+      pitch: -65,
       range: 2200,
     },
   ];
@@ -227,31 +245,44 @@
     {
       title: "4. Suruga Bay outflow",
       body:
-        "The connected water story ends here: watershed runoff → Shizuoka urban floodplain → Suruga Bay. Virtual Shizuoka Airborne Laser Bathymetry (ALB) has been interpolated into a continuous terrain surface, revealing river-mouth bathymetry, the coastal seabed, and the Abe delta fan where flood-borne sediment settles. Terrain relief is exaggerated eight times so the shallow nearshore variation is easier to inspect.",
+        "The connected water story ends here: watershed runoff → Shizuoka urban floodplain → Suruga Bay. Two Virtual Shizuoka Airborne Laser Bathymetry survey swaths cross the nearshore zone east of the Abe River mouth. The blue depth ramp isolates measured seabed returns down to 10.3 m below mean sea level. Terrain relief is exaggerated four times for inspection.",
     },
   ];
 
   function flyToChapter(index) {
+    if (Cesium.defined(voxelPrimitive)) {
+      voxelPrimitive.show = index !== 3;
+    }
     viewer.terrainProvider =
       index === 3 && bathymetryTerrainProvider
         ? bathymetryTerrainProvider
         : worldTerrainProvider;
-    viewer.scene.globe.material = undefined;
+    viewer.scene.globe.material =
+      index === 3 && bathymetryTerrainProvider
+        ? bathymetryMaterial
+        : undefined;
     viewer.scene.verticalExaggeration =
-      index === 3 && bathymetryTerrainProvider ? 8.0 : 1.0;
-    viewer.scene.verticalExaggerationRelativeHeight = 0.0;
+      index === 3 && bathymetryTerrainProvider ? 4.0 : 1.0;
+    viewer.scene.verticalExaggerationRelativeHeight =
+      index === 3 && bathymetryTerrainProvider ? SURUGA_MEAN_SEA_LEVEL : 0.0;
     // Keep subsurface analytics visible over the custom bathymetry terrain.
     viewer.scene.globe.depthTestAgainstTerrain = (index !== 3);
     if (index === 3) {
-      viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(138.62, 35.078, 1400),
-        orientation: {
-          heading: 0,
-          pitch: Cesium.Math.toRadians(-35),
-          roll: 0,
-        },
-        duration: reducedMotion ? 0 : 1.4,
-      });
+      const camera = cameras[index];
+      viewer.camera.flyToBoundingSphere(
+        new Cesium.BoundingSphere(
+          Cesium.Cartesian3.fromDegrees(...camera.target),
+          1
+        ),
+        {
+          offset: new Cesium.HeadingPitchRange(
+            Cesium.Math.toRadians(camera.heading),
+            Cesium.Math.toRadians(camera.pitch),
+            camera.range
+          ),
+          duration: reducedMotion ? 0 : 1.4,
+        }
+      );
       return;
     }
     const camera = cameras[index];
@@ -549,7 +580,7 @@
       </details>
       <details class="vx-details">
         <summary>Sources and data</summary>
-        <p><strong>Coastal bathymetry terrain:</strong> <a href="${DATA_CATALOG}" target="_blank" rel="noopener noreferrer">Virtual Shizuoka</a> 2025 Airborne Laser Bathymetry (CC BY 4.0), tiles 08NE2263–08NE2277. Reprojected EPSG:6676 → WGS84 with PDAL, interpolated into a continuous DEM with GDAL, and streamed from Cesium ion as terrain (asset 5131678). Covers the Abe River mouth and Suruga Bay nearshore zone.</p>
+        <p><strong>Coastal bathymetry terrain:</strong> <a href="${DATA_CATALOG}" target="_blank" rel="noopener noreferrer">Virtual Shizuoka</a> 2025 Airborne Laser Bathymetry (CC BY 4.0), tiles 08NE2263–08NE2272. Reprojected directly from the original EPSG:6676 LAS tiles to WGS84 and rasterized with PDAL before being streamed from Cesium ion as terrain (asset 5131765). The measured coverage consists of two narrow survey swaths east of the Abe River mouth.</p>
         <p><strong>Voxel analytics:</strong> Illustrative derived voxels over the Abe River corridor. Procedural model only — not a measured product. Requires calibration before operational use.</p>
         <p>Terrain: Cesium World Terrain for chapters 1–3; Virtual Shizuoka ALB-derived terrain for chapter 4. City context: PLATEAU 2023 MLIT. Imagery: © OpenStreetMap contributors.</p>
       </details>
@@ -574,7 +605,9 @@
     <p id="vx-story-body"></p>
     <div id="vx-alb-legend" hidden style="margin:0 0 10px;font-size:11px;line-height:1.5;color:#a8c8d8;">
       <strong style="color:#d5e2eb;display:block;margin-bottom:4px;">ALB-derived bathymetry terrain</strong>
-      <span>Virtual Shizuoka DEM · terrain relief exaggerated 8×</span>
+      <div aria-hidden="true" style="height:8px;border-radius:999px;background:linear-gradient(90deg,#082f49,#0369a1,#06b6d4,#67e8f9);margin:5px 0 3px;"></div>
+      <span style="display:flex;justify-content:space-between;"><span>−10.3 m</span><span>−1 m</span></span>
+      <span style="display:block;margin-top:3px;">Virtual Shizuoka measured survey swaths · relief exaggerated 4×</span>
     </div>
     <div class="vx-story-controls">
       <button type="button" id="vx-prev">Previous</button>
