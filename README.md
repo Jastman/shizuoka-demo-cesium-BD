@@ -35,7 +35,7 @@ RRIM imagery to read ridges, drainage, and slope form.
 
 ### Shizuoka Water Intelligence
 
-![Shizuoka Water Intelligence](docs/images/demo-3-shizuoka-water-intelligence.png)
+<img width="1853" height="1244" alt="Shizuoka Water Intelligence" src="https://github.com/user-attachments/assets/db330cc4-259d-45b2-b1c4-049b871491e6" />
 
 A volumetric analytics experience that organizes a watershed-scale model into
 interactive voxels. It demonstrates threshold filtering, aggregation modes,
