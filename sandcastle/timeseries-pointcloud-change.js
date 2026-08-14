@@ -6,22 +6,22 @@
 
   const JAPAN_TERRAIN_ASSET_ID = 1;
   const JAPAN_BUILDINGS_ASSET_ID = 96188;
-  const ATAMI_2019_ASSET_ID = 5131479;
-  const ATAMI_2020_ASSET_ID = 5131486;
+  const ATAMI_2019_ASSET_ID = 5131794;
+  const ATAMI_2021_ASSET_ID = 5131679;
   const ION_CENTER = {
-    lon: 139.092361402,
-    lat: 35.114857176,
+    lon: 139.0728,
+    lat: 35.12,
   };
 
   const COPY = {
     en: {
       languageLabel: "Language",
-      title: "Atami Izusan — 2019 vs 2020 LiDAR epochs",
+      title: "Atami Izusan — 2021 landslide story",
       subtitle:
-        "Compare two real Virtual Shizuoka LiDAR epochs over the same positioned Atami Izusan coastal slope, then inspect where terrain, vegetation, and exposed building edges differ.",
-      tourHeading: "Guided epoch comparison",
+        "Use real Virtual Shizuoka LiDAR to tell the visual story of the 2021 landslide and compare the hillside before and after the event.",
+      tourHeading: "Guided landslide story tour",
       tourHelp:
-        "Move from the full strip view to slope detail, then toggle between the 2019 and 2020 scans for the same hillside.",
+        "Move from the wide coastal view to slope detail, then compare the 2019 pre-event scan with the 2021 landslide survey.",
       tourStart: "Start guided tour",
       tourDialogTitle: "Guided tour",
       tourPreparing: "Preparing the first stop…",
@@ -32,37 +32,26 @@
       tourRestart: "Restart",
       tourClose: "Close",
       tourProgressLabel: "Time remaining in this tour stop",
-      modeHeading: "Epoch layer",
+      modeHeading: "View layer",
       modeYear1: "2019 pre-disaster",
-      modeYear5: "2020 epoch",
-      modeChange: "2019 + 2020 overlay",
-      modeCarbon: "Buildings + epoch",
-      animate: "Play 2019 → 2020",
+      modePost: "2021 Post-Landslide",
+      modeChange: "2019 + 2021 overlay",
+      modeCarbon: "Buildings + landslide",
+      animate: "Play 2019 → 2021",
       reset: "Reset demo",
       kpiHeading: "Scene layers",
       kpiView: "Mode",
       kpiCells: "Terrain",
       kpiLoss: "Buildings",
-      kpiGrowth: "2019 LiDAR",
-      kpiMeanDelta: "2020 LiDAR",
+      kpiGrowth: "2019 pre-event LiDAR",
+      kpiMeanDelta: "2021-07-06 post-disaster LiDAR",
       kpiCarbon: "Overlay focus",
       warning:
-        "This demo now uses real Cesium ion point-cloud assets for both epochs. The side panel narrative is interpretive; Cesium does not compute a per-point difference surface here.",
-      selectionHeading: "Epoch notes",
-      selectionEmpty:
-        "Use the epoch buttons to swap real point clouds, or play the guided tour to compare the same slope across time.",
-      selectionCell: "2019 asset",
-      selectionCenter: "2020 asset",
-      selectionYear1: "Positioned center",
-      selectionYear5: "Coverage",
-      selectionChange: "Comparison use",
-      selectionCarbon: "Performance profile",
-      selectionMode: "Current mode",
-      selectionClear: "Restore notes",
+        "This demo uses real Cesium ion point-cloud assets for both surveys. The side panel narrative is interpretive; Cesium does not compute a per-point difference surface here.",
       cameraHeading: "Camera",
-      cameraInitial: "Epoch close-up",
-      cameraOverview: "Full strip",
-      cameraFoothills: "Slope detail",
+      cameraInitial: "Wide story view",
+      cameraOverview: "Top-down overview",
+      cameraFoothills: "Close-up detail",
       cameraCity: "Coast + buildings",
       sourceSummary: "Data provenance",
       sourceTerrain:
@@ -71,37 +60,34 @@
         "Buildings: OSM Buildings 3D Tiles (ion asset 96188).",
       sourceCandidate: "Virtual Shizuoka source:",
       source2019:
-        "Atami LP LiDAR 2019 (Cesium ion asset 5131479)",
+        "Atami LP LiDAR 2019 clipped to the July 2021 footprint (Cesium ion asset 5131794)",
       source2021:
-        "Atami LP LiDAR 2020 (Cesium ion asset 5131486)",
+        "Atami emergency drone LiDAR acquired 2021-07-06, finalized 2021-08-06 (Cesium ion asset 5131679)",
       sourcePublisher:
         "Publisher: Shizuoka Prefecture via GEOSPATIAL.JP / VIRTUAL SHIZUOKA.",
-      sourceLicense: "Catalog terms: CC BY 4.0.",
+      sourceLicense: "Catalog/license: CC BY 4.0 / ODbL.",
       sourceOverlap:
-        "Both epochs were reprojected into a corrected geocentric frame before Cesium ion tiling, then aligned to the same Atami Izusan hillside story cameras in this demo.",
+        "The 2019 source was clipped to the exact 2021 emergency survey bounds, then both datasets were reprojected from EPSG:6676 to EPSG:4978 for spatially matched Cesium ion tiling.",
       sourceProduction:
         "The comparison is visual, using two separate real point-cloud tilesets. A derived change product would require external registration / differencing and a separate publication step.",
-      legendYear1: "2019 epoch legend",
-      legendYear5: "2020 epoch legend",
+      legendPost: "2021 post-landslide legend",
       legendChange: "Overlay legend",
-      legendCarbon: "Buildings + epoch legend",
+      legendCarbon: "Buildings + landslide",
       legendSourceRgb: "Source RGB point colors",
-      legendYear1Tint: "2019 epoch tint",
-      legendYear5Tint: "2020 epoch tint",
       loadingTerrain: "Loading terrain and context…",
-      loadingGrid: "Loading 2019 and 2020 ion point clouds…",
+      loadingGrid: "Loading 2019 and 2021 ion point clouds…",
       ready:
-        "Ready. 2019 and 2020 LiDAR epochs are available; use the epoch buttons to compare the same slope.",
+        "Ready. Use the 2019 pre-event scan and the 2021 landslide survey to compare the same matched slope footprint.",
       terrainError: "Terrain failed to load: {message}",
       gridError: "Point cloud failed to load: {message}",
       selectedMode: "{mode} mode selected.",
       clearedSelection: "Notes restored.",
-      animationRunning: "Animating from the 2019 scan to the 2020 scan.",
+      animationRunning: "Animating from the 2019 pre-event scan to the 2021 post-disaster scan.",
       animationReduced:
-        "Reduced motion is enabled. The 2020 epoch is shown without animation.",
-      animationComplete: "Animation complete. 2020 epoch shown.",
+        "Reduced motion is enabled. The 2021 post-disaster story is shown without animation.",
+      animationComplete: "Animation complete. 2021 landslide survey shown.",
       cameraSelected: "{camera} camera selected.",
-      resetComplete: "Demo reset to the 2019 close-up.",
+      resetComplete: "Demo reset to the wide story view.",
       tourStarted: "Guided tour started.",
       tourReduced:
         "Reduced motion is enabled. The tour is paused; use Previous or Next to step through the comparison.",
@@ -112,41 +98,41 @@
         "Reduced motion keeps the tour static. Use Previous or Next to move between stops.",
       tourComplete: "Tour complete",
       tourCompleteDescription:
-        "The tour finishes on the full strip overview. Restart it or close the controls.",
+        "The tour finishes on the wide coastal overview. Restart it or close the controls.",
       tourCompleteStatus:
         "Tour complete on the full strip overview.",
       tourClosed: "Guided tour closed.",
       progressRemaining: "{percent}% remaining",
-      stepFujiTitle: "Epoch overview",
+      stepFujiTitle: "Atami in regional context",
       stepFujiDescription:
-        "Start on the full strip to confirm both corrected ion assets cover the same Atami Izusan slope above the shoreline.",
-      stepBaselineTitle: "2019 pre-disaster scan",
+        "Atami sits between steep volcanic terrain and the sea. This opening view frames the narrow valley where the July 2021 debris flow traveled into a dense coastal neighborhood.",
+      stepBaselineTitle: "Before the disaster",
       stepBaselineDescription:
-        "The 2019 LiDAR asset shows the pre-disaster hillside surface, with steep ravines, vegetation, and exposed building edges facing the coast.",
-      stepScenarioTitle: "2020 epoch scan",
+        "In 2019, the same corridor reads as a continuous vegetated slope draining toward the coast. Homes and local roads sit directly downslope from this channelized terrain.",
+      stepScenarioTitle: "Immediate post-landslide survey",
       stepScenarioDescription:
-        "Switch to the 2020 epoch to inspect differences in texture, vegetation cover, and the relationship between the slope and structures.",
-      stepChangeTitle: "Overlay comparison",
+        "The July 6, 2021 emergency LiDAR captures freshly exposed ground and a sharply defined debris-flow path running through the valley toward the built area.",
+      stepChangeTitle: "Reading the change corridor",
       stepChangeDescription:
-        "Display both epochs together to visually inspect where the two point clouds agree and where they separate.",
-      stepCarbonTitle: "Buildings + epoch",
+        "Overlaying both surveys reveals where slope material was stripped, where debris was deposited, and where the built edge intersects the flow corridor.",
+      stepCarbonTitle: "Impact at the urban edge",
       stepCarbonDescription:
-        "Add OSM Buildings back over the point cloud to compare the surveyed slope with contextual building massing.",
-      stepCityTitle: "Coastal edge",
+        "With buildings restored for context, the geometry makes clear how closely homes and streets sit to the mapped debris pathway.",
+      stepCityTitle: "Downstream reach",
       stepCityDescription:
-        "This oblique coastal angle makes the relationship between the shoreline, retaining edges, and the slope easier to read.",
-      stepOverviewTitle: "Full strip recap",
+        "From this downstream angle, the link between mountain channel, neighborhood streets, and shoreline infrastructure becomes legible as one connected system.",
+      stepOverviewTitle: "Regional takeaway",
       stepOverviewDescription:
-        "Finish with the entire LiDAR corridor in view so the audience understands the spatial footprint of both positioned epoch assets.",
+        "The closing view returns to regional scale: a compact but high-consequence corridor where terrain, settlement, and drainage align to shape landslide risk.",
     },
     ja: {
       languageLabel: "言語",
-      title: "熱海伊豆山 — 2019年と2020年のLiDAR比較",
+      title: "熱海伊豆山 — 2019年事前災害と2021-07-06災害後LiDAR比較",
       subtitle:
-        "同じ位置に配置したAtami Izusan沿岸斜面の2時点LiDARを比較し、地形・植生・建物際の違いを確認します。",
+        "同じ測域に合わせた2019年事前災害LiDARと、2021年7月6日の災害後緊急ドローンLiDARを比較します。",
       tourHeading: "時点比較ツアー",
       tourHelp:
-        "全体ストリップから斜面詳細へ移動し、同じ斜面で2019年と2020年のスキャンを切り替えます。",
+        "広域文脈から一致した測域へ移動し、事前災害の斜面と災害後地表を比較します。",
       tourStart: "ガイドツアー開始",
       tourDialogTitle: "ガイドツアー",
       tourPreparing: "最初の停止点を準備しています…",
@@ -159,17 +145,17 @@
       tourProgressLabel: "この停止点の残り時間",
       modeHeading: "時点レイヤー",
       modeYear1: "2019年 事前災害",
-      modeYear5: "2020年 エポック",
-      modeChange: "2019年 + 2020年 重ね合わせ",
-      modeCarbon: "建物 + エポック",
-      animate: "2019年 → 2020年 を再生",
+      modePost: "2021-07-06 災害後",
+      modeChange: "2019年 + 2021年 重ね合わせ",
+      modeCarbon: "建物 + 災害影響",
+      animate: "2019年 → 2021年 を再生",
       reset: "デモをリセット",
       kpiHeading: "シーンレイヤー",
       kpiView: "モード",
       kpiCells: "地形",
       kpiLoss: "建物",
-      kpiGrowth: "2019 LiDAR",
-      kpiMeanDelta: "2020 LiDAR",
+      kpiGrowth: "2019 pre-event LiDAR",
+      kpiMeanDelta: "2021-07-06 post-disaster LiDAR",
       kpiCarbon: "比較の焦点",
       warning:
         "このデモは2時点とも実際のCesium ion点群を使用します。差分サーフェス自体は計算しておらず、比較は視覚的に行います。",
@@ -177,7 +163,7 @@
       selectionEmpty:
         "時点ボタンで実データを切り替えるか、ガイドツアーで同じ斜面を比較してください。",
       selectionCell: "2019年アセット",
-      selectionCenter: "2020年アセット",
+      selectionCenter: "2021年アセット",
       selectionYear1: "配置中心",
       selectionYear5: "カバー範囲",
       selectionChange: "比較方法",
@@ -193,34 +179,34 @@
       sourceTerrain: "地形: Cesium World Terrain（ion asset 1）＋ Cesium World Imagery ベースマップ。",
       sourceBuildings: "建物: OSM Buildings 3D Tiles（ion asset 96188）。",
       sourceCandidate: "Virtual Shizuoka ソース:",
-      source2019: "熱海LP LiDAR 2019（Cesium ion asset 5131479）",
-      source2021: "熱海LP LiDAR 2020（Cesium ion asset 5131486）",
+      source2019: "熱海LP LiDAR 2019（2021年7月測域にクリップ, Cesium ion asset 5131794）",
+      source2021: "熱海 災害後緊急ドローンLiDAR（2021-07-06取得, 2021-08-06確定, Cesium ion asset 5131679）",
       sourcePublisher:
         "公開者: 静岡県（GEOSPATIAL.JP / VIRTUAL SHIZUOKA経由）。",
-      sourceLicense: "カタログ利用条件: CC BY 4.0。",
+      sourceLicense: "カタログ/ライセンス: CC BY 4.0 / ODbL.",
       sourceOverlap:
-        "両時点はCesium ionタイル化前に正しい地心座標系へ再投影してあり、このデモでは同じ熱海伊豆山カメラを共有します。",
+        "2019年データは2021年緊急測量の境界へクリップ後、両データをEPSG:6676からEPSG:4978へ再投影し、空間的に一致したCesium ionタイルへ変換しています。",
       sourceProduction:
         "比較は2つの実点群タイルセットを視覚的に切り替えて行います。厳密な差分生成には外部での登録・差分計算が必要です。",
-      legendYear1: "2019年エポック凡例",
-      legendYear5: "2020年エポック凡例",
+      legendYear1: "2019年事前災害 凡例",
+      legendPost: "2021年災害後 凡例",
       legendChange: "重ね合わせ凡例",
-      legendCarbon: "建物 + エポック凡例",
+      legendCarbon: "建物 + 災害影響 凡例",
       legendSourceRgb: "点群ソースのRGBカラー",
-      legendYear1Tint: "2019年エポックの色",
-      legendYear5Tint: "2020年エポックの色",
+      legendYear1Tint: "2019年事前災害の色",
+      legendPostTint: "2021年災害後の色",
       loadingTerrain: "地形とコンテキストを読み込み中…",
-      loadingGrid: "2019年・2020年のion点群を読み込み中…",
+      loadingGrid: "2019年・2021年のion点群を読み込み中…",
       ready:
-        "準備完了。2019年と2020年のLiDARが利用可能です。ボタンで同じ斜面を比較できます。",
+        "準備完了。2019年事前災害と2021年災害後の時点を切り替えて同一測域を比較できます。",
       terrainError: "地形を読み込めませんでした: {message}",
       gridError: "点群を読み込めませんでした: {message}",
       selectedMode: "{mode} モードを選択しました。",
       clearedSelection: "メモを元に戻しました。",
-      animationRunning: "2019年スキャンから2020年スキャンへ再生中です。",
+      animationRunning: "2019年事前災害スキャンから2021年災害後スキャンへ再生中です。",
       animationReduced:
-        "視覚効果を減らす設定のため、アニメーションなしで2020年を表示します。",
-      animationComplete: "再生完了。2020年エポックを表示しています。",
+        "視覚効果を減らす設定のため、アニメーションなしで2021年を表示します。",
+      animationComplete: "再生完了。2021年災害後を表示しています。",
       cameraSelected: "{camera} カメラに移動しました。",
       resetComplete: "2019年の近接表示にリセットしました。",
       tourStarted: "ガイドツアーを開始しました。",
@@ -237,27 +223,27 @@
       tourCompleteStatus: "全体ストリップ表示でツアーが完了しました。",
       tourClosed: "ガイドツアーを閉じました。",
       progressRemaining: "残り {percent}%",
-      stepFujiTitle: "エポック全景",
+      stepFujiTitle: "地域の中の熱海",
       stepFujiDescription:
-        "まず全体ストリップで、補正済みの2つのionアセットが同じ熱海伊豆山斜面をカバーしていることを確認します。",
-      stepBaselineTitle: "2019年 事前災害スキャン",
+        "熱海は急峻な火山地形と海に挟まれています。この導入視点では、2021年7月の土石流が住宅地へ流下した谷地形の位置関係を捉えます。",
+      stepBaselineTitle: "災害前の斜面",
       stepBaselineDescription:
-        "2019年LiDARは、海岸に面した急斜面、植生、建物際の事前災害状態を示します。",
-      stepScenarioTitle: "2020年 エポックスキャン",
+        "2019年時点では、同じ回廊は連続した植生斜面として読み取れ、谷筋が海側市街地へ直接つながっていることが分かります。",
+      stepScenarioTitle: "土石流直後の計測",
       stepScenarioDescription:
-        "2020年エポックへ切り替え、斜面テクスチャや植生、建物際との関係の違いを確認します。",
-      stepChangeTitle: "重ね合わせ比較",
+        "2021年7月6日の緊急LiDARでは、露出した地盤と明瞭な流下経路が確認でき、土砂が市街地側へ到達した形跡が現れます。",
+      stepChangeTitle: "変化帯を読む",
       stepChangeDescription:
-        "両時点を同時表示して、2つの点群が一致する場所と離れる場所を視覚的に確認します。",
-      stepCarbonTitle: "建物 + エポック",
+        "重ね合わせにより、侵食が進んだ区間、堆積が生じた区間、建物際で差が現れる区間を視覚的に追跡できます。",
+      stepCarbonTitle: "市街地際の影響",
       stepCarbonDescription:
-        "OSM Buildingsを再び重ね、実測斜面と建物コンテキストの関係を確認します。",
-      stepCityTitle: "海岸際",
+        "建物コンテキストを重ねると、土石流経路と住宅・道路の近接関係が立体的に把握できます。",
+      stepCityTitle: "下流側の視点",
       stepCityDescription:
-        "この斜めの海岸視点では、海岸線・擁壁際・斜面の関係が読みやすくなります。",
-      stepOverviewTitle: "全体ストリップの再確認",
+        "下流側から見ることで、山地の谷筋・市街地道路・海岸インフラが一連のシステムとして連動している様子が読み取れます。",
+      stepOverviewTitle: "地域スケールの要点",
       stepOverviewDescription:
-        "最後に2時点のLiDAR回廊全体を表示し、比較対象の空間範囲を再確認します。",
+        "最後に地域スケールへ戻り、地形・集落・排水条件が重なる短い回廊で、災害リスクが集中した構図を再確認します。",
     },
   };
 
@@ -307,6 +293,7 @@
       .change-demo-section:last-child { border-bottom:0; }
       .change-demo-button-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
       .change-demo-button-row, .change-demo-tour-nav, .change-demo-tour-actions { display:flex; flex-wrap:wrap; gap:8px; }
+      .change-demo-tour-nav { margin-bottom: 8px; }
       .change-demo-button { padding:8px 10px; background:var(--button); font-size:.82rem; font-weight:700; line-height:1.2; cursor:pointer; }
       .change-demo-button:hover { background:var(--button-hover); }
       .change-demo-panel button.change-demo-button[aria-pressed="true"], .change-demo-panel button.change-demo-button.change-demo-button--primary { border-color:var(--accent)!important; background-color:var(--accent)!important; color:var(--accent-ink)!important; }
@@ -317,11 +304,27 @@
       .change-demo-kpi dd { margin:4px 0 0; font-size:.95rem; font-weight:800; }
       .change-demo-kpi--wide { grid-column:1 / -1; }
       .change-demo-warning { margin:12px 0 0; padding:10px 12px; border:1px solid var(--warning-border); border-radius:10px; background:var(--warning-bg); font-size:.78rem; line-height:1.45; }
-      .change-demo-tour-card { margin-top:12px; padding:12px; border:1px solid #587185; border-radius:12px; background:rgba(17,31,41,.92); }
-      .change-demo-tour-title { margin:0; font-size:1rem; }
-      .change-demo-tour-subtitle { margin:8px 0 0; font-size:.82rem; }
-      .change-demo-progress { position:relative; height:6px; margin:12px 0; border-radius:999px; background:rgba(113,145,165,.24); overflow:hidden; }
-      .change-demo-progress-bar { position:absolute; inset:0; transform-origin:left center; background:linear-gradient(90deg,#75e7f6,#5ea7ff); }
+      .change-demo-tour-card {
+        position: fixed;
+        left: 50%;
+        bottom: 56px;
+        transform: translateX(-50%);
+        width: min(560px, calc(100vw - 32px));
+        margin: 0;
+        padding: 18px 20px 14px;
+        border: 1px solid rgba(180, 203, 226, 0.22);
+        border-radius: 16px;
+        background: rgba(8, 15, 28, 0.9);
+        box-shadow: 0 8px 40px rgba(0,0,0,.52), 0 2px 8px rgba(0,0,0,.28);
+        backdrop-filter: blur(16px) saturate(125%);
+        -webkit-backdrop-filter: blur(16px) saturate(125%);
+        z-index: 20;
+        pointer-events: auto;
+      }
+      .change-demo-tour-title { margin:0; font-size:1.05rem; font-weight:800; line-height:1.2; letter-spacing:-.02em; }
+      .change-demo-tour-subtitle { margin:8px 0 0; color:var(--muted); font-size:.84rem; line-height:1.55; }
+      .change-demo-progress { position:relative; height:4px; margin:14px 0 12px; border-radius:999px; background:rgba(196,209,223,.18); overflow:hidden; }
+      .change-demo-progress-bar { position:absolute; inset:0; transform-origin:left center; background:var(--accent); }
       .change-demo-selection { display:grid; gap:8px; }
       .change-demo-selection-row { display:grid; grid-template-columns:minmax(0,124px) minmax(0,1fr); gap:10px; padding:8px 0; border-bottom:1px solid rgba(73,98,116,.5); }
       .change-demo-selection-row:last-child { border-bottom:0; }
@@ -333,7 +336,10 @@
       .change-demo-swatch { width:14px; height:14px; border-radius:999px; flex:none; }
       .change-demo-source-list { margin:10px 0 0; padding-left:18px; }
       .change-demo-panel a { color:var(--accent); }
-      @media (max-width: 760px) { .change-demo-panel { inset:auto 12px 12px; max-height:62vh; width:auto; } }
+      @media (max-width: 760px) {
+        .change-demo-panel { inset:auto 12px 12px; max-height:62vh; width:auto; }
+        .change-demo-tour-card { bottom: 10px; width: calc(100vw - 20px); padding: 14px 14px 12px; }
+      }
     `;
     document.head.append(styles);
 
@@ -343,7 +349,7 @@
     shell.innerHTML = `
       <aside class="change-demo-panel" aria-labelledby="change-demo-title">
         <header class="change-demo-header">
-          <p class="change-demo-context">Virtual Shizuoka real epoch comparison</p>
+          <p class="change-demo-context">Virtual Shizuoka real story comparison</p>
           <h1 class="change-demo-title" id="change-demo-title" data-i18n="title">${COPY.en.title}</h1>
           <p class="change-demo-subtitle" data-i18n="subtitle">${COPY.en.subtitle}</p>
           <div class="change-demo-language">
@@ -359,23 +365,6 @@
           <h2 class="change-demo-heading" id="tour-heading" data-i18n="tourHeading">${COPY.en.tourHeading}</h2>
           <p class="change-demo-help" data-i18n="tourHelp">${COPY.en.tourHelp}</p>
           <button class="change-demo-button change-demo-button--primary" id="autotour-btn" type="button" data-i18n="tourStart">${COPY.en.tourStart}</button>
-          <div class="change-demo-tour-card" id="autotour-card" role="dialog" aria-labelledby="autotour-title" aria-describedby="autotour-subtitle" hidden>
-            <h3 class="change-demo-tour-title" id="autotour-title" data-i18n="tourDialogTitle">${COPY.en.tourDialogTitle}</h3>
-            <p class="change-demo-tour-subtitle" id="autotour-subtitle" data-i18n="tourPreparing">${COPY.en.tourPreparing}</p>
-            <div class="change-demo-progress" id="autotour-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
-              <div class="change-demo-progress-bar" id="autotour-progress-bar"></div>
-            </div>
-            <div class="change-demo-tour-nav">
-              <button class="change-demo-button" id="autotour-previous" type="button" data-i18n="tourPrevious">${COPY.en.tourPrevious}</button>
-              <button class="change-demo-button" id="autotour-next" type="button" data-i18n="tourNext">${COPY.en.tourNext}</button>
-            </div>
-            <div class="change-demo-tour-actions" style="margin-top:8px">
-              <button class="change-demo-button" id="autotour-pause" type="button" data-i18n="tourPause">${COPY.en.tourPause}</button>
-              <button class="change-demo-button" id="autotour-resume" type="button" data-i18n="tourResume" hidden>${COPY.en.tourResume}</button>
-              <button class="change-demo-button" id="autotour-restart" type="button" data-i18n="tourRestart">${COPY.en.tourRestart}</button>
-              <button class="change-demo-button" id="autotour-close" type="button" data-i18n="tourClose">${COPY.en.tourClose}</button>
-            </div>
-          </div>
         </section>
 
         <section class="change-demo-section" aria-labelledby="mode-heading">
@@ -383,7 +372,7 @@
             <legend class="change-demo-heading" id="mode-heading" data-i18n="modeHeading">${COPY.en.modeHeading}</legend>
             <div class="change-demo-button-grid">
               <button class="change-demo-button" type="button" data-mode-button data-mode="year1" data-i18n="modeYear1" aria-pressed="true">${COPY.en.modeYear1}</button>
-              <button class="change-demo-button" type="button" data-mode-button data-mode="year5" data-i18n="modeYear5" aria-pressed="false">${COPY.en.modeYear5}</button>
+              <button class="change-demo-button" type="button" data-mode-button data-mode="post" data-i18n="modePost" aria-pressed="false">${COPY.en.modePost}</button>
               <button class="change-demo-button" type="button" data-mode-button data-mode="change" data-i18n="modeChange" aria-pressed="false">${COPY.en.modeChange}</button>
               <button class="change-demo-button" type="button" data-mode-button data-mode="carbon" data-i18n="modeCarbon" aria-pressed="false">${COPY.en.modeCarbon}</button>
             </div>
@@ -412,12 +401,12 @@
           <h2 class="change-demo-heading" id="selection-heading" data-i18n="selectionHeading">${COPY.en.selectionHeading}</h2>
           <p class="change-demo-selection-empty" id="selection-empty" data-i18n="selectionEmpty">${COPY.en.selectionEmpty}</p>
           <dl class="change-demo-selection" id="selection-details">
-            <div class="change-demo-selection-row"><dt data-i18n="selectionCell">${COPY.en.selectionCell}</dt><dd id="selection-cell">5131479</dd></div>
-            <div class="change-demo-selection-row"><dt data-i18n="selectionCenter">${COPY.en.selectionCenter}</dt><dd id="selection-center">5131486</dd></div>
+            <div class="change-demo-selection-row"><dt data-i18n="selectionCell">${COPY.en.selectionCell}</dt><dd id="selection-cell">5131794</dd></div>
+            <div class="change-demo-selection-row"><dt data-i18n="selectionCenter">${COPY.en.selectionCenter}</dt><dd id="selection-center">5131679</dd></div>
             <div class="change-demo-selection-row"><dt data-i18n="selectionYear1">${COPY.en.selectionYear1}</dt><dd id="selection-year1">${ION_CENTER.lat.toFixed(6)}° N, ${ION_CENTER.lon.toFixed(6)}° E</dd></div>
-            <div class="change-demo-selection-row"><dt data-i18n="selectionYear5">${COPY.en.selectionYear5}</dt><dd id="selection-year5">Same positioned Atami Izusan slope</dd></div>
-            <div class="change-demo-selection-row"><dt data-i18n="selectionChange">${COPY.en.selectionChange}</dt><dd id="selection-change">Swap epochs or overlay both in one camera</dd></div>
-            <div class="change-demo-selection-row"><dt data-i18n="selectionCarbon">${COPY.en.selectionCarbon}</dt><dd id="selection-carbon">Balanced mode keeps one epoch visible to reduce GPU load</dd></div>
+            <div class="change-demo-selection-row"><dt data-i18n="selectionYear5">${COPY.en.selectionYear5}</dt><dd id="selection-post">Same positioned Atami Izusan slope</dd></div>
+            <div class="change-demo-selection-row"><dt data-i18n="selectionChange">${COPY.en.selectionChange}</dt><dd id="selection-change">Swap surveys or overlay both in one camera</dd></div>
+            <div class="change-demo-selection-row"><dt data-i18n="selectionCarbon">${COPY.en.selectionCarbon}</dt><dd id="selection-carbon">Balanced mode keeps one story visible to reduce GPU load</dd></div>
             <div class="change-demo-selection-row"><dt data-i18n="selectionMode">${COPY.en.selectionMode}</dt><dd id="selection-mode">2019 pre-disaster</dd></div>
           </dl>
           <button class="change-demo-button" id="selection-clear" type="button" data-i18n="selectionClear">${COPY.en.selectionClear}</button>
@@ -454,6 +443,23 @@
           </details>
         </section>
       </aside>
+      <div class="change-demo-tour-card" id="autotour-card" role="dialog" aria-labelledby="autotour-title" aria-describedby="autotour-subtitle" hidden>
+        <h3 class="change-demo-tour-title" id="autotour-title" data-i18n="tourDialogTitle">${COPY.en.tourDialogTitle}</h3>
+        <p class="change-demo-tour-subtitle" id="autotour-subtitle" data-i18n="tourPreparing">${COPY.en.tourPreparing}</p>
+        <div class="change-demo-progress" id="autotour-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+          <div class="change-demo-progress-bar" id="autotour-progress-bar"></div>
+        </div>
+        <div class="change-demo-tour-nav">
+          <button class="change-demo-button" id="autotour-previous" type="button" data-i18n="tourPrevious">${COPY.en.tourPrevious}</button>
+          <button class="change-demo-button" id="autotour-next" type="button" data-i18n="tourNext">${COPY.en.tourNext}</button>
+        </div>
+        <div class="change-demo-tour-actions" style="margin-top:8px">
+          <button class="change-demo-button" id="autotour-pause" type="button" data-i18n="tourPause">${COPY.en.tourPause}</button>
+          <button class="change-demo-button" id="autotour-resume" type="button" data-i18n="tourResume" hidden>${COPY.en.tourResume}</button>
+          <button class="change-demo-button" id="autotour-restart" type="button" data-i18n="tourRestart">${COPY.en.tourRestart}</button>
+          <button class="change-demo-button" id="autotour-close" type="button" data-i18n="tourClose">${COPY.en.tourClose}</button>
+        </div>
+      </div>
     `;
     document.body.append(shell);
   }
@@ -477,21 +483,21 @@
     autotourRunId: 0,
     prefersReducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     buildings: null,
-    epoch2019: null,
-    epoch2020: null,
+    story2019: null,
+    story2021: null,
   };
 
   const CONFIG = {
     cameraPresets: {
-      initial: { x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 80, range: 1100, heading: 320, pitch: -28 },
-      overview: { x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 110, range: 3400, heading: 328, pitch: -36 },
-      foothills: { x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 95, range: 1600, heading: 286, pitch: -24 },
+      initial: { x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 130, range: 5200, heading: 334, pitch: -35 },
+      overview: { x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 160, range: 2600, heading: 0, pitch: -88 },
+      foothills: { x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 95, range: 1200, heading: 292, pitch: -28 },
       city: { x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 100, range: 1900, heading: 305, pitch: -18 },
     },
     tourWaypoints: [
       { ...{ x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 110, range: 3400, heading: 328, pitch: -36 }, titleKey: "stepFujiTitle", descriptionKey: "stepFujiDescription", duration: 2.4, holdMs: 5000, mode: "year1" },
-      { ...{ x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 80, range: 1100, heading: 320, pitch: -28 }, titleKey: "stepBaselineTitle", descriptionKey: "stepBaselineDescription", duration: 2.2, holdMs: 5200, mode: "year1" },
-      { ...{ x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 80, range: 1100, heading: 320, pitch: -28 }, titleKey: "stepScenarioTitle", descriptionKey: "stepScenarioDescription", duration: 2.2, holdMs: 5200, mode: "year5" },
+      { ...{ x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 130, range: 3800, heading: 332, pitch: -34 }, titleKey: "stepBaselineTitle", descriptionKey: "stepBaselineDescription", duration: 2.2, holdMs: 5200, mode: "year1" },
+      { ...{ x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 130, range: 3800, heading: 332, pitch: -34 }, titleKey: "stepScenarioTitle", descriptionKey: "stepScenarioDescription", duration: 2.2, holdMs: 5200, mode: "post" },
       { ...{ x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 90, range: 1500, heading: 300, pitch: -24 }, titleKey: "stepChangeTitle", descriptionKey: "stepChangeDescription", duration: 2.2, holdMs: 5600, mode: "change" },
       { ...{ x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 95, range: 1700, heading: 286, pitch: -24 }, titleKey: "stepCarbonTitle", descriptionKey: "stepCarbonDescription", duration: 2.2, holdMs: 5600, mode: "carbon" },
       { ...{ x: ION_CENTER.lon, y: ION_CENTER.lat, targetHeight: 100, range: 1900, heading: 305, pitch: -18 }, titleKey: "stepCityTitle", descriptionKey: "stepCityDescription", duration: 2.2, holdMs: 5000, mode: "carbon" },
@@ -543,7 +549,7 @@
     viewer.scene.postProcessStages.fxaa.enabled = true;
     viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 1.25);
     viewer.canvas.tabIndex = 0;
-    viewer.canvas.setAttribute("aria-label", "Atami Izusan epoch comparison scene");
+    viewer.canvas.setAttribute("aria-label", "Atami Izusan story comparison scene");
 
     const buildings = await Cesium.Cesium3DTileset.fromIonAssetId(JAPAN_BUILDINGS_ASSET_ID, {
       maximumScreenSpaceError: 18,
@@ -576,14 +582,14 @@
     });
   }
 
-  function applyEpochTint(tileset, color, alpha) {
+  function applySurveyTint(tileset, color, alpha) {
     tileset.style = new Cesium.Cesium3DTileStyle({
       pointSize: "2.5",
       color: `color('${color}', ${alpha})`,
     });
   }
 
-  async function loadEpochAsset(assetId) {
+  async function loadSurveyAsset(assetId) {
     const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(assetId, {
       maximumScreenSpaceError: 8,
       cacheBytes: 256 * 1024 * 1024,
@@ -622,12 +628,12 @@
   function renderLegend() {
     const titleKeys = {
       year1: "legendYear1",
-      year5: "legendYear5",
+      post: "legendPost",
       change: "legendChange",
       carbon: "legendCarbon",
     };
     const items = STATE.mode === "change"
-      ? [["#ff9f43", "legendYear1Tint"], ["#48b8f0", "legendYear5Tint"]]
+      ? [["#ff9f43", "legendYear1Tint"], ["#48b8f0", "legendPostTint"]]
       : [["#9aa78f", "legendSourceRgb"]];
     requireElement("legend-heading").textContent = translate(titleKeys[STATE.mode]);
     requireElement("legend-list").replaceChildren(
@@ -645,7 +651,7 @@
   function updateNotes() {
     requireElement("selection-mode").textContent =
       STATE.mode === "year1" ? translate("modeYear1")
-      : STATE.mode === "year5" ? translate("modeYear5")
+      : STATE.mode === "post" ? translate("modePost")
       : STATE.mode === "change" ? translate("modeChange")
       : translate("modeCarbon");
   }
@@ -654,37 +660,37 @@
     requireElement("kpi-timestamp").textContent = requireElement("selection-mode").textContent;
     requireElement("kpi-total").textContent = "Streaming";
     requireElement("kpi-loss").textContent = STATE.buildings?.show ? "Visible" : "Hidden";
-    requireElement("kpi-growth").textContent = STATE.epoch2019?.show ? "Visible" : "Hidden";
-    requireElement("kpi-delta").textContent = STATE.epoch2020?.show ? "Visible" : "Hidden";
+    requireElement("kpi-growth").textContent = STATE.story2019?.show ? "Visible" : "Hidden";
+    requireElement("kpi-delta").textContent = STATE.story2021?.show ? "Visible" : "Hidden";
     requireElement("kpi-carbon").textContent =
-      STATE.mode === "change" ? "Two-epoch overlay"
-      : STATE.mode === "carbon" ? "Buildings + active epoch"
-      : "Single epoch";
+      STATE.mode === "change" ? "Two-story overlay"
+      : STATE.mode === "carbon" ? "Buildings + active story"
+      : "Single story";
   }
 
   function switchMode(newMode, announce = true) {
     STATE.mode = newMode;
     const show2019 = newMode === "year1" || newMode === "change" || newMode === "carbon";
-    const show2020 = newMode === "year5" || newMode === "change";
+    const show2021 = newMode === "post" || newMode === "change";
     const showBuildings = newMode === "carbon";
 
-    if (STATE.epoch2019) {
-      STATE.epoch2019.show = show2019;
+    if (STATE.story2019) {
+      STATE.story2019.show = show2019;
       if (newMode === "change") {
-        applyEpochTint(STATE.epoch2019, "#ff9f43", 0.65);
+        applySurveyTint(STATE.story2019, "#ff9f43", 0.65);
       } else {
-        applySourceStyle(STATE.epoch2019);
+        applySourceStyle(STATE.story2019);
       }
-      STATE.epoch2019.maximumScreenSpaceError = newMode === "change" ? 12 : 8;
+      STATE.story2019.maximumScreenSpaceError = newMode === "change" ? 12 : 8;
     }
-    if (STATE.epoch2020) {
-      STATE.epoch2020.show = show2020;
+    if (STATE.story2021) {
+      STATE.story2021.show = show2021;
       if (newMode === "change") {
-        applyEpochTint(STATE.epoch2020, "#48b8f0", 0.65);
+        applySurveyTint(STATE.story2021, "#48b8f0", 0.65);
       } else {
-        applySourceStyle(STATE.epoch2020);
+        applySourceStyle(STATE.story2021);
       }
-      STATE.epoch2020.maximumScreenSpaceError = newMode === "change" ? 12 : 8;
+      STATE.story2021.maximumScreenSpaceError = newMode === "change" ? 12 : 8;
     }
     if (STATE.buildings) {
       STATE.buildings.show = showBuildings;
@@ -832,9 +838,9 @@
     void runAutoplayTour(runId);
   }
 
-  function animateEpochChange() {
+  function animateSurveyChange() {
     if (STATE.prefersReducedMotion) {
-      switchMode("year5", false);
+      switchMode("post", false);
       updateStatus(translate("animationReduced"));
       return;
     }
@@ -848,14 +854,14 @@
     const step = (now) => {
       const progress = Math.min(1, (now - start) / 1800);
       STATE.animationProgress = progress;
-      if (STATE.epoch2019) applyEpochTint(STATE.epoch2019, "#ff9f43", 1 - progress * 0.7);
-      if (STATE.epoch2020) applyEpochTint(STATE.epoch2020, "#48b8f0", 0.3 + progress * 0.7);
+      if (STATE.story2019) applySurveyTint(STATE.story2019, "#ff9f43", 1 - progress * 0.7);
+      if (STATE.story2021) applySurveyTint(STATE.story2021, "#48b8f0", 0.3 + progress * 0.7);
       viewer.scene.requestRender();
       if (progress >= 1) {
         STATE.isAnimating = false;
         STATE.animationFrame = null;
         requireElement("animate-btn").disabled = false;
-        switchMode("year5", false);
+        switchMode("post", false);
         updateStatus(translate("animationComplete"));
         return;
       }
@@ -866,12 +872,12 @@
 
   updateStatus(translate("loadingGrid"));
   try {
-    const [epoch2019, epoch2020] = await Promise.all([
-      loadEpochAsset(ATAMI_2019_ASSET_ID),
-      loadEpochAsset(ATAMI_2020_ASSET_ID),
+    const [story2019, story2021] = await Promise.all([
+      loadSurveyAsset(ATAMI_2019_ASSET_ID),
+      loadSurveyAsset(ATAMI_2021_ASSET_ID),
     ]);
-    STATE.epoch2019 = epoch2019;
-    STATE.epoch2020 = epoch2020;
+    STATE.story2019 = story2019;
+    STATE.story2021 = story2021;
   } catch (error) {
     updateStatus(translate("gridError", { message: error.message }), true);
     throw error;
@@ -890,7 +896,7 @@
   document.querySelectorAll("[data-mode-button]").forEach((button) => {
     button.addEventListener("click", () => switchMode(button.dataset.mode));
   });
-  requireElement("animate-btn").addEventListener("click", animateEpochChange);
+  requireElement("animate-btn").addEventListener("click", animateSurveyChange);
   requireElement("selection-clear").addEventListener("click", () => {
     updateNotes();
     updateStatus(translate("clearedSelection"));
