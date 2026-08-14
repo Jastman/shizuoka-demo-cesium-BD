@@ -21,7 +21,8 @@
       warning: "Planning demo: PLATEAU/GSI geography is real. The animated six-hour event and impacts are illustrative, not a forecast or evacuation instruction.",
       labelLevel: "Water Level",
       labelPhase: "Phase",
-      labelRoutes: "Route State",
+      labelRoutes: "Route Status",
+      labelShelters: "Shelter Status",
       labelWaterSurface: "Rising Water Surface",
       btnRun: "Run Scenario",
       btnPause: "Pause Scenario",
@@ -42,7 +43,7 @@
       tourStep: (n, total) => `Stop ${n} of ${total}`,
       legendTitle: "Map Legend",
       legendRiver: "Abe River channel",
-      legendShelter: "Emergency shelter",
+      legendShelter: "Emergency shelter (green → amber → red)",
       legendRoute: "Emergency route (risk-colored)",
       legendFlood: "Flood planning surface",
       legendWaterSurface: "Animated rising water surface",
@@ -64,6 +65,13 @@
       statusPaused: "Illustrative scenario paused",
       statusComplete: "Illustrative scenario complete",
       gaugeLabel: "Abe River level (illustrative)",
+      statusOpen: "Open",
+      statusWatch: "Watch",
+      statusRestricted: "Restricted",
+      statusClosed: "Closed",
+      statusSafe: "Safe",
+      statusAtRisk: "At risk",
+      statusUnavailable: "Unavailable",
     },
     ja: {
       eyebrow: "静岡県 · 洪水リスク分析",
@@ -74,6 +82,7 @@
       labelLevel: "水位",
       labelPhase: "フェーズ",
       labelRoutes: "経路状態",
+      labelShelters: "避難所状態",
       labelWaterSurface: "上昇する浸水面",
       btnRun: "シナリオ開始",
       btnPause: "一時停止",
@@ -94,7 +103,7 @@
       tourStep: (n, total) => `${n} / ${total} 番目`,
       legendTitle: "凡例",
       legendRiver: "安倍川流路",
-      legendShelter: "緊急避難所",
+      legendShelter: "緊急避難所（緑 → 黄 → 赤）",
       legendRoute: "緊急経路（リスク色分け）",
       legendFlood: "洪水計画浸水面",
       legendWaterSurface: "アニメーション浸水面",
@@ -116,6 +125,13 @@
       statusPaused: "シナリオ一時停止中",
       statusComplete: "シナリオ完了",
       gaugeLabel: "安倍川水位（説明用）",
+      statusOpen: "開通",
+      statusWatch: "注意",
+      statusRestricted: "制限",
+      statusClosed: "閉鎖",
+      statusSafe: "安全",
+      statusAtRisk: "要注意",
+      statusUnavailable: "利用不可",
     },
   };
   let lang = "en";
@@ -178,7 +194,7 @@
     .lang-btn { padding: 3px 8px; border: 1px solid var(--line); border-radius: 6px;
       background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; }
     .lang-btn.active { background: var(--cyan); color: #000; font-weight: 700; }
-    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
     .metric { min-width: 0; padding: 9px; border: 1px solid var(--line);
       border-radius: 9px; background: rgba(255,255,255,.04); }
     .metric span { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; }
@@ -295,6 +311,7 @@
       <div class="metric"><span id="lbl-level"></span><strong id="fl-level">—</strong></div>
       <div class="metric"><span id="lbl-phase"></span><strong id="fl-phase">—</strong></div>
       <div class="metric"><span id="lbl-routes"></span><strong id="fl-routes">—</strong></div>
+      <div class="metric"><span id="lbl-shelters"></span><strong id="fl-shelters">—</strong></div>
     </div>
     <div class="gauge-wrap" aria-label="Water level gauge" title="Illustrative water level (max 5 m)">
       <div class="gauge-track" id="gauge-track" role="meter" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
@@ -400,6 +417,7 @@
     panel.querySelector("#lbl-level").textContent = t("labelLevel");
     panel.querySelector("#lbl-phase").textContent = t("labelPhase");
     panel.querySelector("#lbl-routes").textContent = t("labelRoutes");
+    panel.querySelector("#lbl-shelters").textContent = t("labelShelters");
     panel.querySelector("#lbl-water-surface").textContent = t("labelWaterSurface");
     panel.querySelector("#fl-play").textContent = state.running ? t("btnPause") : t("btnRun");
     panel.querySelector("#fl-restart").textContent = t("btnRestart");
@@ -500,16 +518,180 @@
     return              { phase: "Monitor",  route: "Open",       color: Cesium.Color.CYAN };
   }
 
+  // The illustrative extent is a river-centered stage model: the initial
+  // footprint follows the channel, then widens across the floodplain as the
+  // hydrograph rises. It is intentionally separate from the official L1/L2
+  // planning tiles shown above.
+  const WATER_BASE_HEIGHT = 2;
+  const WATER_HEIGHT_SCALE = 4;
+  const WATER_MIN_LEVEL = samples[0][1];
+  const WATER_MAX_LEVEL = Math.max(...samples.map(([, level]) => level));
+  // Representative channel centerline aligned to the mapped Abe River in the
+  // GSI/PLATEAU view. The earlier illustrative line was displaced east of the
+  // river by up to roughly 2 km in the lower floodplain.
+  const riverChannelCenterline = [
+    [138.359, 35.115], [138.359, 35.110], [138.367, 35.055],
+    [138.373, 35.033], [138.369, 35.020], [138.359, 35.006],
+    [138.3575, 34.998], [138.358, 34.990], [138.3588, 34.982],
+    [138.359, 34.974], [138.362, 34.963], [138.369, 34.956],
+    [138.377, 34.948], [138.386, 34.940], [138.392, 34.932],
+    [138.392, 34.928], [138.393, 34.918],
+  ];
+  const riverCenterline = riverChannelCenterline.slice(5);
+  const riverMinimumWidths = [95, 110, 125, 140, 160, 180, 200, 220, 240, 220, 180, 160];
+  const riverMaximumWidths = [320, 700, 1100, 1400, 1600, 1700, 1500, 1300, 1100, 800, 650, 500];
+  const waterExtentCache = new Map();
+
+  function waterExtentKey(level) {
+    const normalized = Cesium.Math.clamp(
+      (level - WATER_MIN_LEVEL) / (WATER_MAX_LEVEL - WATER_MIN_LEVEL), 0, 1
+    );
+    return Math.round(normalized * 50) / 50;
+  }
+
+  function buildWaterExtent(normalized) {
+    const left = [];
+    const right = [];
+    for (let i = 0; i < riverCenterline.length; i++) {
+      const current = riverCenterline[i];
+      const previous = riverCenterline[Math.max(0, i - 1)];
+      const next = riverCenterline[Math.min(riverCenterline.length - 1, i + 1)];
+      const latitudeRadians = Cesium.Math.toRadians(current[1]);
+      const east = (next[0] - previous[0]) * 111320 * Math.cos(latitudeRadians);
+      const north = (next[1] - previous[1]) * 110540;
+      const length = Math.max(1, Math.hypot(east, north));
+      const normalEast = -north / length;
+      const normalNorth = east / length;
+      const width = Cesium.Math.lerp(
+        riverMinimumWidths[i], riverMaximumWidths[i], Math.pow(normalized, 1.15)
+      );
+      const longitudeOffset = width * normalEast / (111320 * Math.cos(latitudeRadians));
+      const latitudeOffset = width * normalNorth / 110540;
+      left.push([current[0] + longitudeOffset, current[1] + latitudeOffset]);
+      right.unshift([current[0] - longitudeOffset, current[1] - latitudeOffset]);
+    }
+    const ring = left.concat(right);
+    const cartesian = Cesium.Cartesian3.fromDegreesArray(ring.flat());
+    return {
+      key: normalized,
+      ring,
+      cartesian,
+      hierarchy: new Cesium.PolygonHierarchy(cartesian),
+    };
+  }
+
+  function waterExtentForLevel(level) {
+    const key = waterExtentKey(level);
+    if (!waterExtentCache.has(key)) {
+      waterExtentCache.set(key, buildWaterExtent(key));
+    }
+    return waterExtentCache.get(key);
+  }
+
+  const waterSurfaceHeight = (level) => WATER_BASE_HEIGHT + level * WATER_HEIGHT_SCALE;
+
+  function pointInRing(lon, lat, ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1];
+      const xj = ring[j][0], yj = ring[j][1];
+      const intersects = ((yi > lat) !== (yj > lat)) &&
+        lon < (xj - xi) * (lat - yi) / (yj - yi) + xi;
+      if (intersects) inside = !inside;
+    }
+    return inside;
+  }
+
+  function pointToSegmentDistanceMeters(point, a, b) {
+    const latitudeRadians = Cesium.Math.toRadians((point[1] + a[1] + b[1]) / 3);
+    const scaleEast = 111320 * Math.cos(latitudeRadians);
+    const scaleNorth = 110540;
+    const px = point[0] * scaleEast, py = point[1] * scaleNorth;
+    const ax = a[0] * scaleEast, ay = a[1] * scaleNorth;
+    const bx = b[0] * scaleEast, by = b[1] * scaleNorth;
+    const abx = bx - ax, aby = by - ay;
+    const lengthSquared = abx * abx + aby * aby;
+    const progress = lengthSquared === 0
+      ? 0
+      : Cesium.Math.clamp(((px - ax) * abx + (py - ay) * aby) / lengthSquared, 0, 1);
+    return Math.hypot(px - (ax + progress * abx), py - (ay + progress * aby));
+  }
+
+  function distanceToRingMeters(point, ring) {
+    let distance = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < ring.length; i++) {
+      distance = Math.min(
+        distance,
+        pointToSegmentDistanceMeters(point, ring[i], ring[(i + 1) % ring.length])
+      );
+    }
+    return distance;
+  }
+
+  const impactColors = {
+    open: Cesium.Color.CYAN,
+    watch: Cesium.Color.GOLD,
+    restricted: Cesium.Color.ORANGE,
+    closed: Cesium.Color.RED,
+    safe: Cesium.Color.LIME,
+    atRisk: Cesium.Color.ORANGE,
+    unavailable: Cesium.Color.RED,
+  };
+
+  function routeImpact(coords, level) {
+    const ring = waterExtentForLevel(level).ring;
+    let nearestWater = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < coords.length - 2; i += 2) {
+      const a = [coords[i], coords[i + 1]];
+      const b = [coords[i + 2], coords[i + 3]];
+      for (let sample = 0; sample <= 6; sample++) {
+        const progress = sample / 6;
+        const point = [
+          Cesium.Math.lerp(a[0], b[0], progress),
+          Cesium.Math.lerp(a[1], b[1], progress),
+        ];
+        if (pointInRing(point[0], point[1], ring)) return "closed";
+        nearestWater = Math.min(nearestWater, distanceToRingMeters(point, ring));
+      }
+    }
+    if (nearestWater < 110) return "restricted";
+    if (nearestWater < 240) return "watch";
+    return "open";
+  }
+
+  function shelterImpact(lon, lat, level) {
+    const ring = waterExtentForLevel(level).ring;
+    if (pointInRing(lon, lat, ring)) return "unavailable";
+    return distanceToRingMeters([lon, lat], ring) < 220 ? "atRisk" : "safe";
+  }
+
+  function impactLabel(key) {
+    return t({
+      open: "statusOpen",
+      watch: "statusWatch",
+      restricted: "statusRestricted",
+      closed: "statusClosed",
+      safe: "statusSafe",
+      atRisk: "statusAtRisk",
+      unavailable: "statusUnavailable",
+    }[key]);
+  }
+
+  function summarizeImpacts(items, getImpact, keys) {
+    const counts = Object.fromEntries(keys.map((key) => [key, 0]));
+    items.forEach((item) => { counts[getImpact(item)]++; });
+    return keys
+      .filter((key) => counts[key])
+      .map((key) => `${counts[key]} ${impactLabel(key)}`)
+      .join(" · ");
+  }
+
   // ── Static geographic annotations (stop 1) ────────────────────────────────
   // Abe River channel highlight
   viewer.entities.add({
     name: "Abe River channel",
     polyline: {
-      positions: Cesium.Cartesian3.fromDegreesArray([
-        138.2850, 35.1150,  138.3050, 35.0700,  138.3200, 35.0300,
-        138.3400, 35.0050,  138.3600, 34.9900,  138.3720, 34.9750,
-        138.3840, 34.9560,  138.3900, 34.9380,  138.3930, 34.9180,
-      ]),
+      positions: Cesium.Cartesian3.fromDegreesArray(riverChannelCenterline.flat()),
       width: 5,
       clampToGround: true,
       material: new Cesium.PolylineGlowMaterialProperty({
@@ -522,7 +704,7 @@
   // River flow direction arrow at midpoint
   viewer.entities.add({
     name: "Abe River flow direction",
-    position: Cesium.Cartesian3.fromDegrees(138.365, 34.990, 80),
+    position: Cesium.Cartesian3.fromDegrees(138.359, 34.990, 80),
     label: {
       text: "▼ Abe River",
       font: "bold 13px sans-serif",
@@ -586,23 +768,32 @@
       position: Cesium.Cartesian3.fromDegrees(lon, lat),
       point: {
         pixelSize: 12,
-        color: Cesium.Color.fromCssColorString("#4ade80"),
+        color: new Cesium.CallbackProperty(
+          (time) => impactColors[shelterImpact(lon, lat, modelLevel(time))],
+          false
+        ),
         outlineColor: Cesium.Color.BLACK,
         outlineWidth: 2,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
       },
       label: {
-        text: name,
+        text: new Cesium.CallbackProperty(
+          (time) => `${name}\n${impactLabel(shelterImpact(lon, lat, modelLevel(time)))}`,
+          false
+        ),
         font: "12px sans-serif",
         fillColor: Cesium.Color.WHITE,
         showBackground: true,
-        backgroundColor: Cesium.Color.BLACK.withAlpha(0.72),
+        backgroundColor: new Cesium.CallbackProperty(
+          (time) => impactColors[shelterImpact(lon, lat, modelLevel(time))].withAlpha(0.78),
+          false
+        ),
         pixelOffset: new Cesium.Cartesian2(0, -22),
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
         distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 14000),
       },
     });
-    shelterEntities.push(e);
+    shelterEntities.push({ name, lon, lat, entity: e });
   }
 
   // ── Emergency routes ──────────────────────────────────────────────────────
@@ -612,35 +803,36 @@
   ];
   const routeEntities = [];
   for (const [name, coords] of routeDefs) {
-    const e = viewer.entities.add({
-      name: `${name} · PLATEAU emergency-route excerpt`,
-      polyline: {
-        positions: Cesium.Cartesian3.fromDegreesArray(coords),
-        width: 9,
-        clampToGround: true,
-        material: new Cesium.ColorMaterialProperty(
-          new Cesium.CallbackProperty(
-            (time) => risk(modelLevel(time)).color.withAlpha(0.92), false
-          )
-        ),
-      },
-    });
-    routeEntities.push(e);
+    for (let i = 0; i < coords.length - 2; i += 2) {
+      const segmentCoords = coords.slice(i, i + 4);
+      const e = viewer.entities.add({
+        name: `${name} · segment ${i / 2 + 1} · PLATEAU emergency-route excerpt`,
+        polyline: {
+          positions: Cesium.Cartesian3.fromDegreesArray(segmentCoords),
+          width: 9,
+          clampToGround: true,
+          material: new Cesium.ColorMaterialProperty(
+            new Cesium.CallbackProperty(
+              (time) => impactColors[routeImpact(segmentCoords, modelLevel(time))]
+                .withAlpha(0.96),
+              false
+            )
+          ),
+        },
+      });
+      routeEntities.push({ name, coords: segmentCoords, entity: e });
+    }
   }
 
   // ── Animated flood surface (illustrative) ─────────────────────────────────
-  const floodSurfaceCoords = [
-    138.352,34.995, 138.371,34.988, 138.389,34.982, 138.397,34.967,
-    138.396,34.948, 138.385,34.933, 138.371,34.945, 138.360,34.965,
-  ];
-  const WATER_BASE_HEIGHT = 2;
-  const WATER_HEIGHT_SCALE = 4;
-  const waterSurfaceHeight = (level) => WATER_BASE_HEIGHT + level * WATER_HEIGHT_SCALE;
+  const initialWaterExtent = waterExtentForLevel(modelLevel(start));
 
   const floodVolumeEntity = viewer.entities.add({
     name: "Illustrative flood volume",
     polygon: {
-      hierarchy: Cesium.Cartesian3.fromDegreesArray(floodSurfaceCoords),
+      hierarchy: new Cesium.CallbackProperty(
+        (time) => waterExtentForLevel(modelLevel(time)).hierarchy, false
+      ),
       height: WATER_BASE_HEIGHT,
       extrudedHeight: new Cesium.CallbackProperty(
         (time) => waterSurfaceHeight(modelLevel(time)), false
@@ -649,7 +841,8 @@
         new Cesium.CallbackProperty((time) => {
           const level = modelLevel(time);
           const r = risk(level);
-          const alpha = 0.06 + (level - 1.5) / (3.9 - 1.5) * 0.19;
+          const alpha = 0.06 +
+            (level - WATER_MIN_LEVEL) / (WATER_MAX_LEVEL - WATER_MIN_LEVEL) * 0.19;
           return r.color.withAlpha(Math.max(0.08, Math.min(0.65, alpha)));
         }, false)
       ),
@@ -657,7 +850,8 @@
   });
 
   // A Cesium Water material adds moving normals and specular highlights to the
-  // rising surface, while the model matrix lifts it in local ENU coordinates.
+  // rising surface. The small primitive is rebuilt only when the quantized
+  // stage footprint changes, avoiding per-frame geometry churn.
   const waterSurfaceMaterial = new Cesium.Material({
     fabric: {
       type: "Water",
@@ -673,7 +867,7 @@
     },
   });
   const waterSurfaceCenter = Cesium.Cartesian3.fromDegrees(
-    138.374, 34.969, WATER_BASE_HEIGHT
+    138.362, 34.963, WATER_BASE_HEIGHT
   );
   const waterSurfaceFrame = Cesium.Transforms.eastNorthUpToFixedFrame(waterSurfaceCenter);
   const inverseWaterSurfaceFrame = Cesium.Matrix4.inverse(
@@ -681,23 +875,27 @@
   );
   const waterSurfaceTranslation = new Cesium.Matrix4();
   const waterSurfaceModelMatrix = new Cesium.Matrix4();
-  const waterSurfacePrimitive = viewer.scene.primitives.add(new Cesium.Primitive({
-    geometryInstances: new Cesium.GeometryInstance({
-      geometry: new Cesium.PolygonGeometry({
-        polygonHierarchy: new Cesium.PolygonHierarchy(
-          Cesium.Cartesian3.fromDegreesArray(floodSurfaceCoords)
-        ),
-        height: WATER_BASE_HEIGHT,
-        vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
+  function createWaterSurfacePrimitive(extent) {
+    return new Cesium.Primitive({
+      geometryInstances: new Cesium.GeometryInstance({
+        geometry: new Cesium.PolygonGeometry({
+          polygonHierarchy: extent.hierarchy,
+          height: WATER_BASE_HEIGHT,
+          vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
+        }),
       }),
-    }),
-    appearance: new Cesium.EllipsoidSurfaceAppearance({
-      aboveGround: true,
-      translucent: true,
-      material: waterSurfaceMaterial,
-    }),
-    asynchronous: false,
-  }));
+      appearance: new Cesium.EllipsoidSurfaceAppearance({
+        aboveGround: true,
+        translucent: true,
+        material: waterSurfaceMaterial,
+      }),
+      asynchronous: false,
+    });
+  }
+  let waterSurfacePrimitive = viewer.scene.primitives.add(
+    createWaterSurfacePrimitive(initialWaterExtent)
+  );
+  let waterSurfaceExtentKey = initialWaterExtent.key;
 
   function updateWaterSurfaceTransform(level) {
     const offset = waterSurfaceHeight(level) - WATER_BASE_HEIGHT;
@@ -714,15 +912,28 @@
     );
   }
 
+  function updateWaterSurfaceGeometry(level) {
+    const extent = waterExtentForLevel(level);
+    if (extent.key === waterSurfaceExtentKey) return;
+    viewer.scene.primitives.remove(waterSurfacePrimitive);
+    waterSurfacePrimitive = viewer.scene.primitives.add(
+      createWaterSurfacePrimitive(extent)
+    );
+    waterSurfacePrimitive.show = state.waterSurfaceVisible;
+    waterSurfaceExtentKey = extent.key;
+    updateWaterSurfaceTransform(level);
+  }
+
   const waterEdgeEntity = viewer.entities.add({
     name: "Animated water surface boundary",
     polyline: {
       positions: new Cesium.CallbackProperty((time) => {
+        const extent = waterExtentForLevel(modelLevel(time));
         const height = waterSurfaceHeight(modelLevel(time));
         const positions = [];
-        for (let i = 0; i < floodSurfaceCoords.length; i += 2) {
-          positions.push(floodSurfaceCoords[i], floodSurfaceCoords[i + 1], height);
-        }
+        extent.ring.forEach(([lon, lat]) => {
+          positions.push(lon, lat, height);
+        });
         return Cesium.Cartesian3.fromDegreesArrayHeights(positions);
       }, false),
       width: 3,
@@ -740,7 +951,7 @@
   // ── Water-level gauge (illustrative cylinder) ─────────────────────────────
   viewer.entities.add({
     name: "Water-level gauge (illustrative)",
-    position: Cesium.Cartesian3.fromDegrees(138.365, 34.978, 40),
+    position: Cesium.Cartesian3.fromDegrees(138.359, 34.978, 40),
     cylinder: {
       length: new Cesium.CallbackProperty(
         (time) => waterSurfaceHeight(modelLevel(time)) * 4, false
@@ -849,25 +1060,25 @@
     },
     {
       titleKey: "stop2title", copyKey: "stop2copy",
-      target: [138.372, 34.98, 100], offset: [155, -32, 9000],
+      target: [138.359, 34.98, 100], offset: [155, -32, 9000],
       onEnter: () => { legend.hidden = false; },
       onExit:  () => {},
     },
     {
       titleKey: "stop3title", copyKey: "stop3copy",
-      target: [138.381, 34.97, 100], offset: [160, -27, 5000],
+      target: [138.362, 34.963, 100], offset: [160, -27, 5000],
       onEnter: () => {
         legend.hidden = false;
         // Pulse shelters and routes via CSS animation
-        shelterEntities.forEach(e => {
-          if (e.point) e.point.pixelSize = new Cesium.CallbackProperty(() => {
+        shelterEntities.forEach(({ entity }) => {
+          if (entity.point) entity.point.pixelSize = new Cesium.CallbackProperty(() => {
             return 12 + 5 * Math.abs(Math.sin(Date.now() / 400));
           }, false);
         });
       },
       onExit: () => {
-        shelterEntities.forEach(e => {
-          if (e.point) e.point.pixelSize = 12;
+        shelterEntities.forEach(({ entity }) => {
+          if (entity.point) entity.point.pixelSize = 12;
         });
       },
     },
@@ -886,7 +1097,7 @@
             // 2. Descend into central Shizuoka — city grid below, river visible left
             { lon: 138.362, lat: 35.020, h: 280,  heading: 175, pitch: -6, dur: 5.0 },
             // 3. Skim across the urban floodplain at rooftop level (~180m ASL)
-            { lon: 138.370, lat: 34.998, h: 180,  heading: 172, pitch: -5, dur: 5.0 },
+            { lon: 138.358, lat: 34.998, h: 180, heading: 172, pitch: -5, dur: 5.0 },
             // 4. Over the lower floodplain — flood extent clearly visible below
             { lon: 138.378, lat: 34.974, h: 120,  heading: 174, pitch: -4, dur: 5.0 },
             // 5. Coastal lowland — sea level approach, Suruga Bay ahead
@@ -1012,7 +1223,7 @@
     tour.hidden = true;
     legend.hidden = true;
     watershedEntity.show = false;
-    shelterEntities.forEach(e => { if (e.point) e.point.pixelSize = 12; });
+    shelterEntities.forEach(({ entity }) => { if (entity.point) entity.point.pixelSize = 12; });
     panel.querySelector("#fl-tour-start").focus({ preventScroll: true });
   }
 
@@ -1087,12 +1298,22 @@
   viewer.clock.onTick.addEventListener((clock) => {
     const level = modelLevel(clock.currentTime);
     const r = risk(level);
+    updateWaterSurfaceGeometry(level);
     updateWaterSurfaceTransform(level);
     waterSurfaceMaterial.uniforms.amplitude = 1.1 + level * 0.22;
     waterSurfaceMaterial.uniforms.blendColor = r.color.withAlpha(0.26);
     panel.querySelector("#fl-level").textContent = `${level.toFixed(2)} m`;
     panel.querySelector("#fl-phase").textContent = r.phase;
-    panel.querySelector("#fl-routes").textContent = r.route;
+    panel.querySelector("#fl-routes").textContent = summarizeImpacts(
+      routeEntities,
+      (route) => routeImpact(route.coords, level),
+      ["open", "watch", "restricted", "closed"]
+    );
+    panel.querySelector("#fl-shelters").textContent = summarizeImpacts(
+      shelterEntities,
+      (shelter) => shelterImpact(shelter.lon, shelter.lat, level),
+      ["safe", "atRisk", "unavailable"]
+    );
     // Drive gauge bar fill (0–5 m scale) and color ramp position
     const pct = Math.min(100, (level / MAX_LEVEL) * 100);
     gaugeFill.style.transform = `scaleX(${pct / 100})`;
@@ -1123,7 +1344,7 @@
   // ── Initial camera ────────────────────────────────────────────────────────
   viewer.camera.flyToBoundingSphere(
     new Cesium.BoundingSphere(
-      Cesium.Cartesian3.fromDegrees(138.372, 34.975, 100), 300
+      Cesium.Cartesian3.fromDegrees(138.359, 34.975, 100), 300
     ),
     {
       offset: new Cesium.HeadingPitchRange(
