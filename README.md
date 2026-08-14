@@ -15,7 +15,7 @@ bathymetry can be combined into a single 3D decision environment.
 
 ### Abe River Flood Response
 
-![Abe River Flood Response](docs/images/demo-1-abe-river-flood-response.png)
+<img width="1839" height="995" alt="Abe River Flood Response" src="https://github.com/user-attachments/assets/3ccffebe-1f9e-488f-a38f-5b6b37eb233f" />
 
 An interactive flood-response dashboard for the Abe River corridor. It combines
 PLATEAU buildings, flood-planning surfaces, emergency routes, shelters, terrain,
@@ -25,7 +25,8 @@ illustrative; the underlying planning geography is real.
 
 ### Atami LiDAR Survey Corridor
 
-![Atami LiDAR Survey Corridor](docs/images/demo-2-atami-lidar-survey-corridor.png)
+<img width="1840" height="1113" alt="Atami LiDAR Survey Corridor" src="https://github.com/user-attachments/assets/9de73d03-db05-4dc2-96dc-199411a69269" />
+
 
 An Atami hillside LiDAR exploration using four adjacent Virtual Shizuoka 2019
 point-cloud tiles. Users can switch between all returns, ground, and
@@ -42,15 +43,16 @@ vertical reveal, voxel picking, metadata inspection, and a transition to
 measured Shimizu coastal bathymetry. The watershed voxel values are procedural
 illustrations of an analysis workflow, not a calibrated operational product.
 
-### Atami LiDAR Epoch Comparison
+### Atami LiDAR 2019-2021 LAndslide Comparison
 
-![Atami LiDAR Epoch Comparison](docs/images/demo-4-atami-lidar-epoch-comparison.png)
+<img width="1838" height="1116" alt="Atami LiDAR 2019-2021 LAndslide Comparison" src="https://github.com/user-attachments/assets/514cfd82-99dd-4c7a-882e-695a377dbc9c" />
 
-A visual comparison of real Virtual Shizuoka 2019 and 2020 LiDAR epochs over
-the same Atami Izusan coastal slope. Two separately streamed point-cloud
+
+A visual comparison of real Virtual Shizuoka 2019 and 2021 LiDAR scans over
+the same Atami Izusan coastal slope, pre and post the 2021 landslide. Two separately streamed point-cloud
 tilesets can be shown independently or together with buildings and imagery,
 supporting discussion of terrain, vegetation, and exposed structure changes.
-This is a visual epoch comparison rather than a computed per-point change
+This is a visual  comparison rather than a computed per-point change
 surface.
 
 ## Technology and data
