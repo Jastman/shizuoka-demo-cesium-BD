@@ -2,8 +2,7 @@
 
 ## Presenter guide for Business Development and PSS
 
-This guide is written for a presenter who did not build the demos. It explains
-the story, the controls, the CesiumJS implementation, the data provenance, and
+This guide explains the story, the controls, the CesiumJS implementation, the data provenance, and
 the language to use in front of Shizuoka Prefecture.
 
 The suite is a customer-ready set of four CesiumJS experiences:
@@ -14,8 +13,8 @@ The suite is a customer-ready set of four CesiumJS experiences:
    from unclassified points, and relate the survey to terrain and buildings.
 3. **Shizuoka Water Intelligence** - explore a watershed voxel analytics
    workflow, then transition to measured coastal bathymetry.
-4. **Atami LiDAR Epoch Comparison** - compare real 2019 and 2020 point-cloud
-   epochs over the same coastal slope.
+4. **Atami LiDAR Epoch Comparison** - compare real 2019 and 2021 point-cloud
+   scans over the same coastal slope pre and post landslide.
 
 Together, the demos tell a progression from **regional context**, to
 **measured observations**, to **analysis**, to **change over time**. The
@@ -34,7 +33,7 @@ leave the map.
 3. Allow the first scene to stream terrain, imagery, and 3D Tiles before
    presenting. A wired or strong Wi-Fi connection is recommended.
 4. Present in this order unless the audience asks for a different topic:
-   **Flood Response -> LiDAR Corridor -> Water Intelligence -> Epoch
+   **Flood Response -> LiDAR Corridor -> Water Intelligence -> Landslide
    Comparison**.
 
 The landing page is the presentation entry point. The source scripts are in
@@ -54,7 +53,7 @@ The four source files are:
 | Flood Response | `sandcastle/disaster-response-hydrodynamic.js` |
 | LiDAR Survey Corridor | `sandcastle/point-cloud-vs-buildings.js` |
 | Water Intelligence | `sandcastle/voxel-water-saturation.js` |
-| Epoch Comparison | `sandcastle/timeseries-pointcloud-change.js` |
+| Landslide Comparison | `sandcastle/timeseries-pointcloud-change.js` |
 
 The normal BD/PSS workflow is to use the published landing page, not to edit
 or paste code during the meeting.
@@ -84,8 +83,8 @@ or paste code during the meeting.
 > including the distinction between measured ground and unclassified points.
 > The third chapter demonstrates how point observations can be organized into
 > a volumetric analytics model across the watershed, with a measured
-> bathymetry case at the coast. Finally, we compare two real LiDAR survey
-> epochs over the same hillside. The suite moves from response, to evidence,
+> bathymetry case at the coast. Finally, we compare two real LiDAR surveys
+> over the same hillside, where the 2021 landslide occurred - comparing pre-landslide in 2019, and post-landslide in 2021. The suite moves from response, to evidence,
 > to analysis, to change over time."
 
 ### What the suite demonstrates technically
@@ -415,7 +414,7 @@ Cesium styling, not a new classification product.
 - Where would classification, ground filtering, or QA add the most value?
 - How should point-cloud survey corridors be compared with buildings,
   terrain, roads, or other city context?
-- What metadata, vertical datum, and source epoch must accompany a production
+- What metadata, vertical datum, and source events must accompany a production
   analytical product?
 
 ---
@@ -611,15 +610,15 @@ the river mouth.
 
 ---
 
-# Demo 4: Atami LiDAR Epoch Comparison
+# Demo 4: 2021 Atami Landslide LiDAR Comparison
 
 ## Purpose and audience value
 
-This demo compares two real Virtual Shizuoka LiDAR epochs over the same
+This demo compares two real Virtual Shizuoka LiDAR scan over the same
 corrected Atami Izusan coastal slope:
 
-- **2019**, presented as the pre-disaster reference epoch.
-- **2020**, presented as the later survey epoch.
+- **2019**, presented as the pre-disaster reference scan.
+- **2021**, a point cloud scan showing the hillside post-landslide.
 
 The visual comparison helps an audience inspect changes in terrain texture,
 vegetation cover, exposed edges, and the relationship to buildings. It is a
@@ -631,20 +630,20 @@ quality control, and publication.
 
 ## How to run it
 
-1. Open **Atami Izusan - 2019 vs 2020 LiDAR epochs**.
-2. Wait for the status to say that terrain and both LiDAR epochs are
+1. Open **Atami Izusan - 2019 vs 2021 LiDAR scan**.
+2. Wait for the status to say that terrain and both LiDAR scans are
    available.
-3. Start **Guided epoch comparison**.
+3. Start **Guided scan comparison**.
 4. Let the tour run, or use **Previous**, **Next**, **Pause**, **Resume**, and
    **Restart**.
-5. After the tour, demonstrate the epoch modes:
+5. After the tour, demonstrate the event modes:
    - **2019 pre-disaster**
-   - **2020 epoch**
-   - **2019 + 2020 overlay**
-   - **Buildings + epoch**
-6. Use **Play 2019 -> 2020** to show a short visual transition between epochs.
+   - **2021 post-landslide**
+   - **2019 + 2021 overlay**
+   - **Buildings + scans**
+6. Use **Play 2019 -> 2021** to show a short visual transition between pre and post-landslide.
 7. Use the camera buttons:
-   - **Epoch close-up**
+   - **Hillside close-up**
    - **Full strip**
    - **Slope detail**
    - **Coast + buildings**
@@ -654,20 +653,20 @@ quality control, and publication.
 
 The guided tour has seven stops:
 
-1. **Epoch overview:** both corrected assets are framed over the same slope.
+1. **Scan overview:** both corrected assets are framed over the same slope.
 2. **2019 pre-disaster scan:** the reference hillside is shown.
-3. **2020 epoch scan:** the later point cloud is shown from the same camera.
-4. **Overlay comparison:** the two epochs receive contrasting tints so
+3. **2021 landslide scan:** the later point cloud is shown from the same camera.
+4. **Overlay comparison:** the two scans receive contrasting tints so
    agreement and separation are easier to see.
-5. **Buildings plus epoch:** OSM Buildings add urban massing context.
+5. **Buildings plus scans:** OSM Buildings add urban massing context.
 6. **Coastal edge:** an oblique view emphasizes the shoreline, retaining edges,
    and slope.
 7. **Full-strip recap:** the audience sees the spatial footprint again.
 
-The manual modes make the comparison repeatable. In single-epoch modes the
-source RGB point colors are retained. In overlay mode the 2019 epoch is tinted
-orange and the 2020 epoch blue. In the buildings mode, OSM Buildings are
-shown with the active epoch.
+The manual modes make the comparison repeatable. In single-event modes the
+source RGB point colors are retained. In overlay mode the 2019 scans is tinted
+orange and the 2021 scan blue. In the buildings mode, OSM Buildings are
+shown with the active event.
 
 The transition button animates opacity and tint for approximately 1.8 seconds.
 It is a visual handoff between surveys, not a time interpolation of points or
@@ -676,7 +675,7 @@ terrain.
 ## How it was built
 
 The viewer uses Cesium World Terrain and Cesium World Imagery, with OSM
-Buildings loaded as a contextual 3D Tileset. The two LiDAR epochs are loaded
+Buildings loaded as a contextual 3D Tileset. The two LiDAR scans are loaded
 in parallel as separate `Cesium3DTileset` instances from Cesium ion.
 
 Each point-cloud tileset uses `PointCloudShading` with attenuation and
@@ -687,12 +686,12 @@ interactive.
 The mode state controls visibility and styling:
 
 - 2019 mode shows only the 2019 tileset.
-- 2020 mode shows only the 2020 tileset.
+- 2020 mode shows only the 2021 tileset.
 - Overlay mode shows both and applies contrasting `Cesium3DTileStyle` tints.
-- Buildings mode shows the 2019 epoch with OSM Buildings.
+- Buildings mode shows the 2019 scan with OSM Buildings.
 
-The animation uses `requestAnimationFrame` to change the two epoch styles and
-then settles on the 2020 mode. The guided tour uses seven fixed camera
+The animation uses `requestAnimationFrame` to change the two scan styles and
+then settles on the 2021 mode. The guided tour uses seven fixed camera
 waypoints and explicit cancellation/version state so a user can pause, close,
 restart, or step without leaving an old tour running.
 
@@ -706,25 +705,25 @@ combining survey data with global terrain.
 
 - **2019 LiDAR:** Atami LP LiDAR 2019, Virtual Shizuoka, Cesium ion asset
   **5131479**.
-- **2020 LiDAR:** Atami LP LiDAR 2020, Virtual Shizuoka, Cesium ion asset
-  **5131486**.
+- **2021 LiDAR:** Atami LP LiDAR 2021, Virtual Shizuoka, Cesium ion asset
+  **5131679**.
 - **Terrain:** Cesium World Terrain, ion asset **1**, with vertex normals.
 - **Buildings:** OSM Buildings 3D Tiles, ion asset **96188**.
 - **Basemap:** Cesium World Imagery.
 - **Publisher/catalog context:** Shizuoka Prefecture through GEOSPATIAL.JP /
   Virtual Shizuoka; the source copy identifies the catalog terms as CC BY 4.0.
-- **Preprocessing note:** the two epochs were reprojected into a corrected
+- **Preprocessing note:** the two scans were reprojected into a corrected
   geocentric frame before Cesium ion tiling and aligned to the same story
   cameras.
 
 ## Spoken presentation script
 
 > "The final demo adds time. We are looking at two real Virtual Shizuoka
-> LiDAR epochs over the same Atami Izusan coastal slope: 2019 and 2020. The
+> LiDAR scans over the same Atami Izusan coastal slope: 2019 and 2021. The
 > key requirement for a meaningful comparison is spatial alignment, so both
 > assets were corrected into a common geocentric frame before tiling."
 
-> "I will show the 2019 reference first, then the 2020 epoch from the same
+> "I will show the 2019 reference first, then the 2021 scan from the same
 > camera. This keeps the audience focused on what changed in the view rather
 > than asking them to mentally register two different map positions."
 
@@ -734,7 +733,7 @@ combining survey data with global terrain.
 > add the building model to relate the surveyed slope to the surrounding
 > urban form."
 
-> "The Play button provides a short visual transition from 2019 to 2020. It is
+> "The Play button provides a short visual transition from 2019 to 2021. It is
 > important to be precise: this is a visual comparison of two real point-cloud
 > tilesets. The demo does not calculate a per-point displacement or a
 > difference surface. A production change-detection product would add
@@ -752,8 +751,8 @@ combining survey data with global terrain.
 - How should repeated LiDAR surveys be registered and quality-controlled?
 - What change metrics matter: elevation, exposed structure, vegetation, or
   surface displacement?
-- How can a derived change product be published alongside the source epochs?
-- Which survey epochs and vertical datums should be retained for auditability?
+- How can a derived change product be published alongside the source scans?
+- Which survey scans and vertical datums should be retained for auditability?
 
 ---
 
